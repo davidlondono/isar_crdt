@@ -10,7 +10,7 @@ import 'models/operation_change.dart';
 import 'utils/hlc.dart';
 
 export 'models/models.dart';
-export 'changes/isar_write_changes.dart';
+export 'isar_model_processor/isar_model_processor.dart';
 
 abstract class ProcessData {
   Future<Hlc> canonicalTime();
