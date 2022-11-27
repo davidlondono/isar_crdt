@@ -53,7 +53,7 @@ class IsarChangesSync {
   Future<void> clearRebuild() async {
     final changes = await getChanges();
     if (changes.isEmpty) return;
-    await isar.txn(() => isar.clear());
+    await isar.writeTxn(() => isar.clear());
     await processor.storeChanges(changes);
 
     await IsarWriteChanges(isar).upgradeChanges(changes);
@@ -115,3 +115,4 @@ dynamic _encode(dynamic value) {
       throw 'Unsupported type: ${value.runtimeType}';
   }
 }
+// q: what is the best way to handle this?
