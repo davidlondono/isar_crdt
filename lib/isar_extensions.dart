@@ -1,9 +1,9 @@
-
 import 'dart:convert';
 
 import 'utils/sid.dart' show SidUtils;
 
 import 'package:isar/isar.dart';
+// ignore: implementation_imports
 import 'package:isar/src/common/isar_links_common.dart' show IsarLinksCommon;
 
 import 'isar_changesync.dart';
@@ -16,9 +16,9 @@ extension IsarC on Isar {
   }
 }
 
-extension IsarLinksImplChanges<T extends ChangesyncBaseObject> on IsarLinksCommon<T> {
+extension IsarLinksImplChanges<T extends ChangesyncBaseObject>
+    on IsarLinksCommon<T> {
   Future<void> _saveChanges() async {
-
     final sourceId = requireAttached();
     final obj = await sourceCollection.get(sourceId);
     final sid = targetCollection.getSid(obj);
@@ -40,7 +40,8 @@ extension IsarLinksImplChanges<T extends ChangesyncBaseObject> on IsarLinksCommo
             value: targetCollection.getSid(obj)))
         .toList();
 
-    await targetCollection._saveNewOperationChange([...entriesAdd, ...entriesRemove]);
+    await targetCollection
+        ._saveNewOperationChange([...entriesAdd, ...entriesRemove]);
     return save();
   }
 }
@@ -48,17 +49,20 @@ extension IsarLinksImplChanges<T extends ChangesyncBaseObject> on IsarLinksCommo
 extension IsarLinksChanges<T extends ChangesyncBaseObject> on IsarLinks<T> {
   Future<void> saveChanges() {
     final aa = this;
-    
+
     if (aa is IsarLinksCommon<T>) {
       return aa._saveChanges();
     }
     return save();
   }
 }
+
 extension CollectionSchemaSid<T> on CollectionSchema<T> {
   get sidName => 'sid';
 }
-extension IsarCollectionChanges<T extends ChangesyncBaseObject> on IsarCollection<T> {
+
+extension IsarCollectionChanges<T extends ChangesyncBaseObject>
+    on IsarCollection<T> {
   String getSid(obj) => obj.sid;
   Map<String, dynamic> toJson(T obj) =>
       jsonDecode(jsonEncode(obj)) as Map<String, dynamic>;
@@ -74,8 +78,9 @@ extension IsarCollectionChanges<T extends ChangesyncBaseObject> on IsarCollectio
     return diff;
   }
 
-  List<NewOperationChange> _getInsertEntries(List<String> ids) =>
-      ids.map((id) => NewOperationChange.insert(collection: schema.name, sid: id)).toList();
+  List<NewOperationChange> _getInsertEntries(List<String> ids) => ids
+      .map((id) => NewOperationChange.insert(collection: schema.name, sid: id))
+      .toList();
 
   Iterable<NewOperationChange> _getEditEntriesMap(
           String id, Map<String, dynamic> json) =>
@@ -92,10 +97,8 @@ extension IsarCollectionChanges<T extends ChangesyncBaseObject> on IsarCollectio
       final json = toJson(object);
       return _getEditEntriesMap(objId, json);
     } catch (e) {
-      print(e);
-      print('implement toJson: $object');
+      throw Exception("object $object needs to implements toJson() to work");
     }
-    return <NewOperationChange>[];
   }
 
   Future<bool> deleteChanges(int id) async {
@@ -106,7 +109,8 @@ extension IsarCollectionChanges<T extends ChangesyncBaseObject> on IsarCollectio
   Future<int> deleteAllChanges(List<int> ids) async {
     final objs = await getAll(ids);
     final deletedEntries = objs
-        .map((obj) => NewOperationChange.delete(collection: schema.name, sid: getSid(obj)))
+        .map((obj) => NewOperationChange.delete(
+            collection: schema.name, sid: getSid(obj)))
         .toList();
 
     await _saveNewOperationChange(deletedEntries);
@@ -131,8 +135,10 @@ extension IsarCollectionChanges<T extends ChangesyncBaseObject> on IsarCollectio
     final newSids = newElements.map(getSid).toList();
 
     final insertEntries = _getInsertEntries(newSids);
-    final newEditEntries =
-        newElements.map((e) => _getEditEntries(e)).expand((element) => element).toList();
+    final newEditEntries = newElements
+        .map((e) => _getEditEntries(e))
+        .expand((element) => element)
+        .toList();
 
     final updateElements = elementsMatch.unmatched;
     final elementsFound = await filter().anyOf(updateElements, (q, T id) {
@@ -140,14 +146,17 @@ extension IsarCollectionChanges<T extends ChangesyncBaseObject> on IsarCollectio
     }).exportJson();
 
     final updatedElementJsons = updateElements.map((e) => toJson(e));
-    final oldEditEntries = updatedElementJsons.map((toUpdate) {
-      schema.idName;
-      final id = toUpdate[schema.sidName] as String;
-      final found = elementsFound.firstWhere(
-          (element) => element[schema.idName] == toUpdate[schema.idName]);
+    final oldEditEntries = updatedElementJsons
+        .map((toUpdate) {
+          schema.idName;
+          final id = toUpdate[schema.sidName] as String;
+          final found = elementsFound.firstWhere(
+              (element) => element[schema.idName] == toUpdate[schema.idName]);
 
-      return _getEditEntriesMap(id, difference(found, toUpdate));
-    }).expand((element) => element).toList();
+          return _getEditEntriesMap(id, difference(found, toUpdate));
+        })
+        .expand((element) => element)
+        .toList();
 
     final allEntries = [...insertEntries, ...newEditEntries, ...oldEditEntries];
     await _saveNewOperationChange(allEntries);
@@ -164,6 +173,7 @@ extension IsarCollectionChanges<T extends ChangesyncBaseObject> on IsarCollectio
 
 extension AllQueryFilter<T> on QueryBuilder<T, T, QFilterCondition> {
   QueryBuilder<T, T, QAfterFilterCondition> idEqualTo(Id value) {
+    // ignore: invalid_use_of_protected_member
     return QueryBuilder.apply(this, (query) {
       return query.addFilterCondition(FilterCondition.equalTo(
         property: r'id',

@@ -1,5 +1,3 @@
-
-
 import 'package:isar/isar.dart';
 
 abstract class ChangesyncBaseObject {
@@ -10,6 +8,7 @@ abstract class ChangesyncBaseObject {
   IsarLink<dynamic>? getLink(String link) {
     throw UnimplementedError();
   }
+
   IsarLinks<dynamic>? getLinks(String link) {
     throw UnimplementedError();
   }

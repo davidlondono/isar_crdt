@@ -1,5 +1,3 @@
-
-
 import 'dart:convert';
 
 import 'package:isar/isar.dart';
@@ -8,6 +6,7 @@ import 'operation_change.dart';
 import '../utils/hlc.dart';
 
 class ChangesyncBaseModel {
+  ChangesyncBaseModel();
   Id id = Isar.autoIncrement;
   // attributes
   late String collection;
@@ -31,15 +30,18 @@ class ChangesyncBaseModel {
     };
   }
 
-  static fromChange(OperationChange change) => ChangesyncBaseModel()
-    ..collection = change.collection
-    ..field = change.field
-    ..rowId = change.sid
-    ..operation = change.operation.name
-    ..value = jsonEncode(change.value)
-    ..hlc = change.hlc.toString()
-    ..modified = change.modified.toString();
+  // static ChangesyncBaseModel fromChange(OperationChange change) => ChangesyncBaseModel()
+  //   ..fromChange(change);
 
+  void fromChange(OperationChange change) {
+    collection = change.collection;
+    field = change.field;
+    rowId = change.sid;
+    operation = change.operation.name;
+    value = jsonEncode(change.value);
+    hlc = change.hlc.toString();
+    modified = change.modified.toString();
+  }
 
   OperationChange toChange() => OperationChange(
         collection: collection,

@@ -25,9 +25,11 @@ abstract class ProcessData {
 class IsarChangesSync {
   final Isar isar;
   final ProcessData processor;
+  final IsarWriteChanges? writer;
   const IsarChangesSync({
     required this.isar,
     required this.processor,
+    this.writer,
   });
 
   Future<Hlc> _canonicalTime() => processor.canonicalTime();
@@ -53,10 +55,12 @@ class IsarChangesSync {
   Future<void> clearRebuild() async {
     final changes = await getChanges();
     if (changes.isEmpty) return;
-    await isar.writeTxn(() => isar.clear());
-    await processor.storeChanges(changes);
+    await isar.writeTxn(() async {
+      await isar.clear();
+      await processor.storeChanges(changes);
+    });
 
-    await IsarWriteChanges(isar).upgradeChanges(changes);
+    await (writer ?? IsarWriteChanges(isar)).upgradeChanges(changes);
   }
 
   Future<Hlc> merge(List<Map<String, dynamic>> changeset) async {
@@ -78,8 +82,7 @@ class IsarChangesSync {
           hlc: hlc,
           modified: canonicalTime);
     }).toList();
-    await processor.storeChanges(newChanges);
-    // TODO filter out changes that are already in the database
+    await isar.writeTxn(() => processor.storeChanges(newChanges));
     await _updateTables(since: canonicalTime);
     return canonicalTime;
   }
@@ -91,6 +94,8 @@ class IsarChangesSync {
     final newChanges = changes
         .map((change) => change.withHlc(hlc: hlc, modified: canonical))
         .toList();
+
+    // TODO filter out changes that are already in the database
 
     await processor.storeChanges(newChanges);
   }

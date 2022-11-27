@@ -1,16 +1,15 @@
-// import 'dart:math';
 // ignore_for_file: invalid_use_of_protected_member
 
 import 'dart:async';
 
 import "package:collection/collection.dart";
 import 'package:isar/isar.dart';
+// ignore: implementation_imports
 import 'package:isar/src/common/isar_links_common.dart' show IsarLinksCommon;
 
-import '../models/changesync_base_object.dart';
 import '../isar_extensions.dart';
+import '../models/changesync_base_object.dart';
 import '../models/operation_change.dart';
-
 
 abstract class _Transaction {
   final List<OperationChange> changes;
@@ -63,7 +62,8 @@ class _SyncOperation {
 }
 
 class _SyncLinksTransaction extends _Transaction {
-  QueryBuilder<ChangesyncBaseObject, ChangesyncBaseObject, QAfterFilterCondition> query;
+  QueryBuilder<ChangesyncBaseObject, ChangesyncBaseObject,
+      QAfterFilterCondition> query;
   List<_SyncOperation> operations;
 
   List<IsarLinks<dynamic>> linksToSave = <IsarLinks<dynamic>>[];
@@ -128,9 +128,9 @@ class _SyncLinksTransaction extends _Transaction {
 }
 
 class IsarWriteChanges {
-  Isar isar;
+  final Isar isar;
 
-  IsarWriteChanges(this.isar);
+  const IsarWriteChanges(this.isar);
 
   List<_DeleteTransaction> _mapDeleteTransactions(
       List<OperationChange> deleteChanges) {
@@ -209,8 +209,8 @@ class IsarWriteChanges {
 
     transactions.addAll(insertTransactions);
 
-    final updatesSplit =
-        updatedInsertSplit.unmatched.splitByOperation(ChangesyncOperations.update);
+    final updatesSplit = updatedInsertSplit.unmatched
+        .splitByOperation(ChangesyncOperations.update);
     final updateEntries = updatesSplit.matched
         .groupListsBy((element) => element.collection)
         .entries;
@@ -237,8 +237,8 @@ class IsarWriteChanges {
       transactions.add(_UpdateTransaction(
           collection: isarCollection, json: jsons, changes: entry.value));
     }
-    final linkedSplit = updatesSplit.unmatched
-        .splitByOperations([ChangesyncOperations.addLink, ChangesyncOperations.removeLink]);
+    final linkedSplit = updatesSplit.unmatched.splitByOperations(
+        [ChangesyncOperations.addLink, ChangesyncOperations.removeLink]);
 
     final linkedCleanSplit = linkedSplit.matched.splitMatch((linkChange) =>
         !deletedSplit.matched
@@ -318,9 +318,8 @@ extension _IsarCollectionSid<T> on IsarCollection<T> {
       _queryBySids(sids).exportJson();
 }
 
-
 extension EE on OperationChange {
   IsarCollection<dynamic>? getCollection(Isar isar) {
-   return isar.getCollectionByNameInternal(this.collection);
+    return isar.getCollectionByNameInternal(this.collection);
   }
 }

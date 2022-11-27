@@ -3,34 +3,39 @@
 import 'dart:async';
 
 import 'package:isar/isar.dart';
-import 'package:isar_changesync/isar_changesync.dart';
-import 'package:isar_changesync/models/changesync_base_model.dart';
-import 'package:isar_changesync/utils/sid.dart';
+import '../isar_changesync.dart';
+import '../utils/sid.dart';
 
-import '../models/operation_change.dart';
 import '../utils/hlc.dart';
 
 class IsarModelProcessor<T extends ChangesyncBaseModel> extends ProcessData {
   final IsarCollection<T> changesyncCollection;
-  IsarModelProcessor(this.changesyncCollection);
+  final T Function() builder;
+  IsarModelProcessor(
+    this.changesyncCollection, {
+    required this.builder,
+  });
 
   @override
   Future<Hlc> canonicalTime() async {
-    final entry =
-        await changesyncCollection.filter()._hlcIsNotEmpty()._sortByHlc().findFirst();
+    final entry = await changesyncCollection
+        .filter()
+        ._hlcIsNotEmpty()
+        ._sortByHlc()
+        .findFirst();
     if (entry == null) return Hlc.zero(SidUtils.random());
     return Hlc.parse(entry.hlc);
   }
 
   OperationChange entryToChange(T entry) => entry.toChange();
 
-  T changeToEntry(OperationChange change) => ChangesyncBaseModel.fromChange(change);
+  T changeToEntry(OperationChange change) => builder()..fromChange(change);
 
   @override
   Future<List<OperationChange>> queryChanges({
     String? hlcNode,
     Hlc? hlcSince,
-  }) {
+  }) async {
     var query = changesyncCollection.filter()._hlcIsNotEmpty();
     if (hlcNode != null) {
       query = query._hlcContains(hlcNode);
@@ -38,13 +43,14 @@ class IsarModelProcessor<T extends ChangesyncBaseModel> extends ProcessData {
     if (hlcSince != null) {
       query = query._hlcGreaterThan(hlcSince.toString());
     }
-    return query.findAll().then((value) => value.map(entryToChange).toList());
+    final values = await query.findAll();
+    return values.map(entryToChange).toList();
   }
 
   @override
   Future<void> storeChanges(List<OperationChange> changes) async {
-    await changesyncCollection.isar
-        .writeTxn(() => changesyncCollection.putAll(changes.map(changeToEntry).toList()));
+    final entries = changes.map(changeToEntry).toList();
+    await changesyncCollection.putAll(entries);
   }
 }
 
@@ -65,8 +71,7 @@ extension ChangesyncBaseModelQueryFilter<T extends ChangesyncBaseModel>
     });
   }
 
-    QueryBuilder<T, T, QAfterFilterCondition> _hlcContains(
-      String value,
+  QueryBuilder<T, T, QAfterFilterCondition> _hlcContains(String value,
       {bool caseSensitive = true}) {
     return QueryBuilder.apply(this, (query) {
       return query.addFilterCondition(FilterCondition.contains(
@@ -76,6 +81,7 @@ extension ChangesyncBaseModelQueryFilter<T extends ChangesyncBaseModel>
       ));
     });
   }
+
   QueryBuilder<T, T, QAfterFilterCondition> _hlcGreaterThan(
     String value, {
     bool include = false,

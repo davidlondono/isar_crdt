@@ -1,4 +1,3 @@
-
 import '../utils/hlc.dart';
 
 enum ChangesyncOperations {
@@ -8,6 +7,7 @@ enum ChangesyncOperations {
   addLink,
   removeLink,
 }
+
 class NewOperationChange {
   // attributes
   final String collection;
@@ -26,7 +26,9 @@ class NewOperationChange {
   NewOperationChange.insert({
     required this.collection,
     required this.sid,
-  }) : operation = ChangesyncOperations.insert, field = null, value = null;
+  })  : operation = ChangesyncOperations.insert,
+        field = null,
+        value = null;
 
   NewOperationChange.edit({
     required this.collection,
@@ -38,7 +40,9 @@ class NewOperationChange {
   NewOperationChange.delete({
     required this.collection,
     required this.sid,
-  }) : operation = ChangesyncOperations.delete, field = null, value = null;
+  })  : operation = ChangesyncOperations.delete,
+        field = null,
+        value = null;
 
   OperationChange withHlc({
     required Hlc hlc,
@@ -53,9 +57,7 @@ class NewOperationChange {
         hlc: hlc,
         modified: modified,
       );
-  
 }
-
 
 class OperationChange extends NewOperationChange {
   final Hlc hlc;
