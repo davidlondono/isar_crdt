@@ -50,6 +50,15 @@ class IsarChangesSync {
     await IsarWriteChanges(isar).upgradeChanges(changes);
   }
 
+  Future<void> clearRebuild() async {
+    final changes = await getChanges();
+    if (changes.isEmpty) return;
+    await isar.txn(() => isar.clear());
+    await processor.storeChanges(changes);
+
+    await IsarWriteChanges(isar).upgradeChanges(changes);
+  }
+
   Future<Hlc> merge(List<Map<String, dynamic>> changeset) async {
     final Hlc canonicalTime = changeset.fold<Hlc>(await _canonicalTime(),
         (ct, map) => Hlc.recv(ct, Hlc.parse(map['hlc'])));
@@ -75,8 +84,7 @@ class IsarChangesSync {
     return canonicalTime;
   }
 
-  Future<void> saveChanges(
-      Isar isar, List<NewOperationChange> changes) async {
+  Future<void> saveChanges(List<NewOperationChange> changes) async {
     final canonical = await _canonicalTime();
     final hlc = Hlc.send(canonical);
 

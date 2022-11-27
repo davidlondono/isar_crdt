@@ -157,7 +157,7 @@ extension IsarCollectionChanges<T extends ChangesyncBaseObject> on IsarCollectio
 
   Future<void> _saveNewOperationChange(List<NewOperationChange> changes) async {
     for (var processor in _isarProcessors) {
-      await processor.saveChanges(isar, changes);
+      await processor.saveChanges(changes);
     }
   }
 }
