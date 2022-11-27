@@ -1,5 +1,5 @@
 name: isar_changesync
-description: A new Flutter package project.
+description: A new Dart package project.
 version: 0.0.2
 homepage:
 
@@ -13,9 +13,7 @@ dependencies:
   collection: any
 
 dev_dependencies:
-  flutter_lints: ^2.0.0
   test: ^1.22.0
   mockito: ^5.3.2
   build_runner: ^2.3.2
   isar_generator: *isar_version
-  isar_flutter_libs: *isar_version # contains Isar Core
