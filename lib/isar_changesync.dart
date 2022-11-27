@@ -9,6 +9,9 @@ import 'changes/isar_write_changes.dart';
 import 'models/operation_change.dart';
 import 'utils/hlc.dart';
 
+export 'models/models.dart';
+export 'changes/isar_write_changes.dart';
+
 abstract class ProcessData {
   Future<Hlc> canonicalTime();
   Future<List<OperationChange>> queryChanges({
