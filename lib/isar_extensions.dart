@@ -3,22 +3,20 @@ import 'dart:convert';
 
 import 'utils/sid.dart' show SidUtils;
 
-import 'models/changesync_base_object.dart';
 import 'package:isar/isar.dart';
-import 'package:isar/src/native/isar_link_impl.dart' show IsarLinksImpl;
+import 'package:isar/src/common/isar_links_common.dart' show IsarLinksCommon;
 
-import 'models/operation_change.dart';
 import 'isar_changesync.dart';
 
 final List<IsarChangesSync> _isarProcessors = [];
 
 extension IsarC on Isar {
-  register(IsarChangesSync processor) {
+  registerChanges(IsarChangesSync processor) {
     _isarProcessors.add(processor);
   }
 }
 
-extension IsarLinksImplChanges<T extends ChangesyncBaseObject> on IsarLinksImpl<T> {
+extension IsarLinksImplChanges<T extends ChangesyncBaseObject> on IsarLinksCommon<T> {
   Future<void> _saveChanges() async {
 
     final sourceId = requireAttached();
@@ -51,7 +49,7 @@ extension IsarLinksChanges<T extends ChangesyncBaseObject> on IsarLinks<T> {
   Future<void> saveChanges() {
     final aa = this;
     
-    if (aa is IsarLinksImpl<T>) {
+    if (aa is IsarLinksCommon<T>) {
       return aa._saveChanges();
     }
     return save();

@@ -3,6 +3,7 @@
 import 'package:isar/isar.dart';
 
 abstract class ChangesyncBaseObject {
+  @Index(replace: true, unique: true)
   String sid = "";
   Map<String, dynamic> toJson();
 

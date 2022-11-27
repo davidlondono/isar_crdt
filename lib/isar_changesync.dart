@@ -11,6 +11,7 @@ import 'utils/hlc.dart';
 
 export 'models/models.dart';
 export 'isar_model_processor/isar_model_processor.dart';
+export 'isar_extensions.dart';
 
 abstract class ProcessData {
   Future<Hlc> canonicalTime();
