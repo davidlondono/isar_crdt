@@ -1,8 +1,6 @@
 import 'dart:convert';
 import 'package:meta/meta.dart';
 
-import 'utils/sid.dart' show SidUtils;
-
 import 'package:isar/isar.dart';
 // ignore: implementation_imports
 import 'package:isar/src/common/isar_links_common.dart' show IsarLinksCommon;

@@ -1,5 +1,4 @@
 import 'package:test/test.dart';
-import 'package:isar/isar.dart';
 import 'package:isar_changesync/changes/isar_write_changes.dart';
 import 'package:isar_changesync/utils/hlc.dart';
 import 'package:mockito/annotations.dart';

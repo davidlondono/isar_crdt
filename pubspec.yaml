@@ -6,15 +6,14 @@ homepage:
 environment:
   sdk: '>=2.18.4 <3.0.0'
 
-isar_version: &isar_version ^3.0.0
-
 dependencies:
-  isar: *isar_version
+  isar: ^3.0.0
   collection: any
+  meta: any
 
 dev_dependencies:
   lints: ^2.0.1
   test: ^1.22.0
   mockito: ^5.3.2
   build_runner: ^2.3.2
-  isar_generator: *isar_version
+  isar_generator: ^3.0.0
