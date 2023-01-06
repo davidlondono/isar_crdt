@@ -20,6 +20,7 @@ abstract class ProcessData {
     Hlc? hlcSince,
   });
   Future<void> storeChanges(List<OperationChange> changes);
+  String generateRandomSid();
 }
 
 class IsarChangesSync {
@@ -33,6 +34,8 @@ class IsarChangesSync {
   });
 
   Future<Hlc> _canonicalTime() => processor.canonicalTime();
+
+  String generateRandomSid() => processor.generateRandomSid();
 
   Future<List<OperationChange>> getChanges(
       {Hlc? modifiedSince, bool onlyModifiedHere = false}) async {

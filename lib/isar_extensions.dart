@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'package:meta/meta.dart';
 
 import 'utils/sid.dart' show SidUtils;
 
@@ -8,11 +9,22 @@ import 'package:isar/src/common/isar_links_common.dart' show IsarLinksCommon;
 
 import 'isar_changesync.dart';
 
-final List<IsarChangesSync> _isarProcessors = [];
+final Map<Isar, IsarChangesSync> _isarProcessors = {};
+
+
 
 extension IsarC on Isar {
   registerChanges(IsarChangesSync processor) {
-    _isarProcessors.add(processor);
+    _isarProcessors[this] = processor;
+  }
+    
+  @visibleForTesting
+  Iterable<IsarChangesSync> getProcessors() {
+    return _isarProcessors.values;
+  }
+
+  IsarChangesSync? get processor {
+    return _isarProcessors[this];
   }
 }
 
@@ -78,9 +90,6 @@ extension IsarCollectionChanges<T extends ChangesyncBaseObject>
     return diff;
   }
 
-  List<NewOperationChange> _getInsertEntries(List<String> ids) => ids
-      .map((id) => NewOperationChange.insert(collection: schema.name, sid: id))
-      .toList();
 
   Iterable<NewOperationChange> _getEditEntriesMap(
           String id, Map<String, dynamic> json) =>
@@ -91,11 +100,13 @@ extension IsarCollectionChanges<T extends ChangesyncBaseObject>
           .map((key) => NewOperationChange.edit(
               collection: schema.name, sid: id, field: key, value: json[key]));
 
-  Iterable<NewOperationChange> _getEditEntries(T object) {
+  NewOperationChange _getInsertEntry(T object) {
     final objId = getSid(object);
     try {
       final json = toJson(object);
-      return _getEditEntriesMap(objId, json);
+        json.remove(schema.idName);
+        json.remove("sid");
+      return NewOperationChange.insert(collection: schema.name, sid: objId, value: json);
     } catch (e) {
       throw Exception("object $object needs to implements toJson() to work");
     }
@@ -110,7 +121,7 @@ extension IsarCollectionChanges<T extends ChangesyncBaseObject>
     final objs = await getAll(ids);
     final deletedEntries = objs
         .map((obj) => NewOperationChange.delete(
-            collection: schema.name, sid: getSid(obj)))
+            collection: name, sid: getSid(obj)))
         .toList();
 
     await _saveNewOperationChange(deletedEntries);
@@ -123,25 +134,25 @@ extension IsarCollectionChanges<T extends ChangesyncBaseObject>
   }
 
   Future<List<int>> putAllChanges(List<T> elements) async {
+    if(isar.processor == null) {
+      return putAll(elements);
+    }
     for (final element in elements) {
       if (element.sid.isEmpty) {
-        element.sid = SidUtils.random();
+        element.sid = isar.processor!.generateRandomSid();
       }
     }
     final elementsMatch =
         elements.splitMatch((e) => schema.getId(e) == Isar.autoIncrement);
     final newElements = elementsMatch.matched;
     await putAll(newElements);
-    final newSids = newElements.map(getSid).toList();
-
-    final insertEntries = _getInsertEntries(newSids);
-    final newEditEntries = newElements
-        .map((e) => _getEditEntries(e))
-        .expand((element) => element)
+    final insertEntries = newElements
+        .map((e) => _getInsertEntry(e))
         .toList();
 
     final updateElements = elementsMatch.unmatched;
-    final elementsFound = await filter().anyOf(updateElements, (q, T id) {
+    final elementsFound = await filter()
+    .anyOf(updateElements, (q, T id) {
       return q.idEqualTo(schema.getId(id));
     }).exportJson();
 
@@ -158,16 +169,14 @@ extension IsarCollectionChanges<T extends ChangesyncBaseObject>
         .expand((element) => element)
         .toList();
 
-    final allEntries = [...insertEntries, ...newEditEntries, ...oldEditEntries];
+    final allEntries = [...insertEntries, ...oldEditEntries];
     await _saveNewOperationChange(allEntries);
-    putAll(updateElements);
+    await putAll(updateElements);
     return elements.map((e) => schema.getId(e)).toList();
   }
 
   Future<void> _saveNewOperationChange(List<NewOperationChange> changes) async {
-    for (var processor in _isarProcessors) {
-      await processor.saveChanges(changes);
-    }
+    isar.processor?.saveChanges(changes);
   }
 }
 

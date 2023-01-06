@@ -11,9 +11,11 @@ import '../utils/hlc.dart';
 class IsarModelProcessor<T extends ChangesyncBaseModel> extends ProcessData {
   final IsarCollection<T> changesyncCollection;
   final T Function() builder;
+  final String Function() sidGenerator;
   IsarModelProcessor(
     this.changesyncCollection, {
     required this.builder,
+    required this.sidGenerator,
   });
 
   @override
@@ -51,6 +53,11 @@ class IsarModelProcessor<T extends ChangesyncBaseModel> extends ProcessData {
   Future<void> storeChanges(List<OperationChange> changes) async {
     final entries = changes.map(changeToEntry).toList();
     await changesyncCollection.putAll(entries);
+  }
+  
+  @override
+  String generateRandomSid() {
+    return sidGenerator();
   }
 }
 

@@ -8,6 +8,7 @@ import 'package:mockito/mockito.dart';
 import 'package:isar_changesync/isar_changesync.dart';
 
 import 'isar_changesync_test.mocks.dart';
+import 'utils/fake_isar.dart';
 
 final operationMock = OperationChange(
     collection: 'CarModel',
@@ -18,22 +19,6 @@ final operationMock = OperationChange(
     sid: "",
     value: "ee");
 
-class FakeIsar extends Mock implements Isar {
-  FakeIsar();
-
-  @override
-  Future<T> writeTxn<T>(Future<T> Function() callback,
-      {bool silent = false}) async {
-    return callback();
-  }
-
-  @override
-  Future<void> clear() {
-    return super.noSuchMethod(Invocation.method(#clear, []),
-        returnValue: Future.value());
-    // return Future.value();
-  }
-}
 
 @GenerateMocks([
   ProcessData,
@@ -44,7 +29,7 @@ class FakeIsar extends Mock implements Isar {
 void main() {
   final processor = MockProcessData();
   final writer = MockIsarWriteChanges();
-  final isar = FakeIsar();
+  final isar = MockIsar();
   late IsarChangesSync changesSync;
   setUpAll(() async {
     // await Isar.initializeIsarCore(download: true);
