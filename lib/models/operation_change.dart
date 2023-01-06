@@ -2,7 +2,6 @@ import 'package:collection/equality.dart';
 
 import '../utils/hlc.dart';
 
-
 enum ChangesyncOperations {
   insert,
   update,
@@ -63,7 +62,7 @@ class NewOperationChange {
         modified: modified,
       );
 
-        @override
+  @override
   bool operator ==(Object other) {
     if (other is! NewOperationChange) return false;
     if (collection != other.collection) return false;
@@ -76,19 +75,25 @@ class NewOperationChange {
 
   equalValue(Object? value) {
     // if (value.runtimeType != this.value.runtimeType) return false;
-    if(value is String || value is int || value is double || value is bool  || value is DateTime || value is Hlc || value == null) {
+    if (value is String ||
+        value is int ||
+        value is double ||
+        value is bool ||
+        value is DateTime ||
+        value is Hlc ||
+        value == null) {
       return value == this.value;
     }
-    if(value is List) {
+    if (value is List) {
       return ListEquality().equals(value, this.value as List);
     }
-    if(value is Map) {
+    if (value is Map) {
       return MapEquality().equals(value, this.value as Map);
     }
-    if(value is Set) {
+    if (value is Set) {
       return SetEquality().equals(value, this.value as Set);
     }
-    
+
     return false;
   }
 
@@ -96,7 +101,8 @@ class NewOperationChange {
   int get hashCode {
     return Object.hashAll([collection, sid, field, value, operation]);
   }
-  Map<String,dynamic> toJson() {
+
+  Map<String, dynamic> toJson() {
     return {
       "collection": collection,
       "sid": sid,
@@ -105,6 +111,7 @@ class NewOperationChange {
       "operation": operation,
     };
   }
+
   @override
   String toString() {
     return 'NewOperationChange(collection: $collection, sid: $sid, field: $field, value: $value, operation: $operation)';

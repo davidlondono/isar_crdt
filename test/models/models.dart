@@ -8,7 +8,7 @@ class CarModel extends ChangesyncBaseObject {
   Id id = Isar.autoIncrement;
   late String make;
   late String year;
-  
+
   @override
   Map<String, dynamic> toJson() {
     return {

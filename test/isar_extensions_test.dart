@@ -2,7 +2,6 @@ import 'package:mockito/annotations.dart';
 import 'package:mockito/mockito.dart';
 import 'package:test/test.dart';
 
-
 import 'package:isar/isar.dart';
 
 import 'package:isar_changesync/isar_changesync.dart';
@@ -31,7 +30,6 @@ class FakeQuery<T> extends Mock implements Query<T> {
   }
 }
 
-
 extension MockQueryBuilderE on MockQueryBuilder {
   QueryBuilder<MockObject, MockObject, QAfterFilterCondition> anyOf<E, RS>(
     Iterable<E> items,
@@ -40,21 +38,21 @@ extension MockQueryBuilderE on MockQueryBuilder {
     return this as QueryBuilder<MockObject, MockObject, QAfterFilterCondition>;
   }
 }
-int Function(MockObject) returnGetId () => (MockObject obj) => obj.id;
-QueryBuilderInternal<MockObject> returnQuery () => MockQueryBuilderInternal();
 
+int Function(MockObject) returnGetId() => (MockObject obj) => obj.id;
+QueryBuilderInternal<MockObject> returnQuery() => MockQueryBuilderInternal();
 
 @GenerateMocks([
   IsarChangesSync,
 ], customMocks: [
-  MockSpec<IsarCollection<MockObject>>(as: #MockIsarCollection, onMissingStub: OnMissingStub.returnDefault),
-  MockSpec<QueryBuilder<MockObject, MockObject, QFilterCondition>>(as: #MockQueryBuilder),
+  MockSpec<IsarCollection<MockObject>>(
+      as: #MockIsarCollection, onMissingStub: OnMissingStub.returnDefault),
+  MockSpec<QueryBuilder<MockObject, MockObject, QFilterCondition>>(
+      as: #MockQueryBuilder),
   MockSpec<QueryBuilderInternal<MockObject>>(as: #MockQueryBuilderInternal),
-  MockSpec<CollectionSchema<MockObject>>(as: #MockCollectionSchema,
-   onMissingStub: OnMissingStub.returnDefault
-  )
+  MockSpec<CollectionSchema<MockObject>>(
+      as: #MockCollectionSchema, onMissingStub: OnMissingStub.returnDefault)
 ])
-
 void main() {
   final mockIsar = MockIsar();
   late Isar isar;
@@ -70,8 +68,6 @@ void main() {
     isar = await Isar.open(
       [CarModelSchema],
     );
-
-
 
     mockIsar.registerChanges(mockProcessor);
     isar.registerChanges(mockProcessor);
@@ -137,42 +133,37 @@ void main() {
     test("must register new items", () async {
       // arrange
       final mocked = [
-        CarModel.fabric("1")
-        ..sid = "sid_1",
-        CarModel.fabric("2")
-        ..sid = "sid_2",
-        CarModel.fabric("3")
-        ..sid = "sid_3",
+        CarModel.fabric("1")..sid = "sid_1",
+        CarModel.fabric("2")..sid = "sid_2",
+        CarModel.fabric("3")..sid = "sid_3",
       ];
       final carCollection = isar.collection<CarModel>();
-      
+
       // call
       await isar.writeTxn(() async {
         return carCollection.putAllChanges(mocked);
       });
 
-    final verifySaveChanges = verify(mockProcessor.saveChanges(captureAny));
-    expect(verifySaveChanges.callCount, 1);
-    final capturedOperations = verifySaveChanges.captured.single;
-    expect(capturedOperations, isA<List<NewOperationChange>>());
+      final verifySaveChanges = verify(mockProcessor.saveChanges(captureAny));
+      expect(verifySaveChanges.callCount, 1);
+      final capturedOperations = verifySaveChanges.captured.single;
+      expect(capturedOperations, isA<List<NewOperationChange>>());
 
-    final operations = [
-          NewOperationChange.insert(collection: CarModelSchema.name, sid: "sid_1", value: {
-            "make": "make 1",
-            "year": "year 1"
-          }),
-          NewOperationChange.insert(collection: CarModelSchema.name, sid: "sid_2", value: {
-            "make": "make 2",
-            "year": "year 2"
-          }),
-          NewOperationChange.insert(collection: CarModelSchema.name, sid: "sid_3", value: {
-            "make": "make 3",
-            "year": "year 3"
-          })
-        ];
-    expect(
-        capturedOperations,
-        equals(operations));
+      final operations = [
+        NewOperationChange.insert(
+            collection: CarModelSchema.name,
+            sid: "sid_1",
+            value: {"make": "make 1", "year": "year 1"}),
+        NewOperationChange.insert(
+            collection: CarModelSchema.name,
+            sid: "sid_2",
+            value: {"make": "make 2", "year": "year 2"}),
+        NewOperationChange.insert(
+            collection: CarModelSchema.name,
+            sid: "sid_3",
+            value: {"make": "make 3", "year": "year 3"})
+      ];
+      expect(capturedOperations, equals(operations));
     });
     test("must register edited items", () {});
   });

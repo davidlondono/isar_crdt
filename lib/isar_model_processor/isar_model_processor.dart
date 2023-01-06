@@ -54,7 +54,7 @@ class IsarModelProcessor<T extends ChangesyncBaseModel> extends ProcessData {
     final entries = changes.map(changeToEntry).toList();
     await changesyncCollection.putAll(entries);
   }
-  
+
   @override
   String generateRandomSid() {
     return sidGenerator();

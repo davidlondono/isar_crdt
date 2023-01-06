@@ -19,7 +19,6 @@ final operationMock = OperationChange(
     sid: "",
     value: "ee");
 
-
 @GenerateMocks([
   ProcessData,
   IsarWriteChanges

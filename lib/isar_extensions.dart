@@ -11,13 +11,11 @@ import 'isar_changesync.dart';
 
 final Map<Isar, IsarChangesSync> _isarProcessors = {};
 
-
-
 extension IsarC on Isar {
   registerChanges(IsarChangesSync processor) {
     _isarProcessors[this] = processor;
   }
-    
+
   @visibleForTesting
   Iterable<IsarChangesSync> getProcessors() {
     return _isarProcessors.values;
@@ -90,7 +88,6 @@ extension IsarCollectionChanges<T extends ChangesyncBaseObject>
     return diff;
   }
 
-
   Iterable<NewOperationChange> _getEditEntriesMap(
           String id, Map<String, dynamic> json) =>
       json.keys
@@ -104,9 +101,10 @@ extension IsarCollectionChanges<T extends ChangesyncBaseObject>
     final objId = getSid(object);
     try {
       final json = toJson(object);
-        json.remove(schema.idName);
-        json.remove("sid");
-      return NewOperationChange.insert(collection: schema.name, sid: objId, value: json);
+      json.remove(schema.idName);
+      json.remove("sid");
+      return NewOperationChange.insert(
+          collection: schema.name, sid: objId, value: json);
     } catch (e) {
       throw Exception("object $object needs to implements toJson() to work");
     }
@@ -120,8 +118,8 @@ extension IsarCollectionChanges<T extends ChangesyncBaseObject>
   Future<int> deleteAllChanges(List<int> ids) async {
     final objs = await getAll(ids);
     final deletedEntries = objs
-        .map((obj) => NewOperationChange.delete(
-            collection: name, sid: getSid(obj)))
+        .map((obj) =>
+            NewOperationChange.delete(collection: name, sid: getSid(obj)))
         .toList();
 
     await _saveNewOperationChange(deletedEntries);
@@ -134,7 +132,7 @@ extension IsarCollectionChanges<T extends ChangesyncBaseObject>
   }
 
   Future<List<int>> putAllChanges(List<T> elements) async {
-    if(isar.processor == null) {
+    if (isar.processor == null) {
       return putAll(elements);
     }
     for (final element in elements) {
@@ -146,13 +144,10 @@ extension IsarCollectionChanges<T extends ChangesyncBaseObject>
         elements.splitMatch((e) => schema.getId(e) == Isar.autoIncrement);
     final newElements = elementsMatch.matched;
     await putAll(newElements);
-    final insertEntries = newElements
-        .map((e) => _getInsertEntry(e))
-        .toList();
+    final insertEntries = newElements.map((e) => _getInsertEntry(e)).toList();
 
     final updateElements = elementsMatch.unmatched;
-    final elementsFound = await filter()
-    .anyOf(updateElements, (q, T id) {
+    final elementsFound = await filter().anyOf(updateElements, (q, T id) {
       return q.idEqualTo(schema.getId(id));
     }).exportJson();
 
