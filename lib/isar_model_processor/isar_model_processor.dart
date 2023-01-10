@@ -8,7 +8,7 @@ import '../utils/sid.dart';
 
 import '../utils/hlc.dart';
 
-class IsarModelProcessor<T extends ChangesyncBaseModel> extends ProcessData {
+class IsarModelProcessor<T extends CrdtBaseModel> extends ProcessData {
   final IsarCollection<T> crdtCollection;
   final T Function() builder;
   final String Function() sidGenerator;
@@ -61,7 +61,7 @@ class IsarModelProcessor<T extends ChangesyncBaseModel> extends ProcessData {
   }
 }
 
-extension ChangesyncBaseModelQueryFilter<T extends ChangesyncBaseModel>
+extension CrdtBaseModelQueryFilter<T extends CrdtBaseModel>
     on QueryBuilder<T, T, QFilterCondition> {
   QueryBuilder<T, T, QAfterFilterCondition> _hlcIsNotEmpty() {
     return QueryBuilder.apply(this, (query) {

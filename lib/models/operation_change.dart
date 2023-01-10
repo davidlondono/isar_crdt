@@ -2,7 +2,7 @@ import 'package:collection/collection.dart';
 
 import '../utils/hlc.dart';
 
-enum ChangesyncOperations {
+enum CrdtOperations {
   insert,
   update,
   delete,
@@ -18,7 +18,7 @@ class NewOperationChange {
   final String sid;
   final String? field;
   final Object? value;
-  final ChangesyncOperations operation;
+  final CrdtOperations operation;
 
   const NewOperationChange({
     required this.collection,
@@ -31,7 +31,7 @@ class NewOperationChange {
     required this.collection,
     required this.sid,
     required this.value,
-  })  : operation = ChangesyncOperations.insert,
+  })  : operation = CrdtOperations.insert,
         field = null;
 
   NewOperationChange.edit({
@@ -39,12 +39,12 @@ class NewOperationChange {
     required this.sid,
     required this.field,
     required this.value,
-  }) : operation = ChangesyncOperations.update;
+  }) : operation = CrdtOperations.update;
 
   NewOperationChange.delete({
     required this.collection,
     required this.sid,
-  })  : operation = ChangesyncOperations.delete,
+  })  : operation = CrdtOperations.delete,
         field = null,
         value = null;
 

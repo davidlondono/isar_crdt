@@ -1,6 +1,6 @@
 import 'package:isar/isar.dart';
 
-abstract class ChangesyncBaseObject {
+abstract class CrdtBaseObject {
   @Index(replace: true, unique: true)
   String sid = "";
   Map<String, dynamic> toJson();

@@ -14,7 +14,7 @@ final operationMock = OperationChange(
     field: 'ee',
     hlc: Hlc.zero('mock'),
     modified: Hlc.zero("nodeId"),
-    operation: ChangesyncOperations.addLink,
+    operation: CrdtOperations.addLink,
     sid: "",
     value: "ee");
 

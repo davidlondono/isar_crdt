@@ -10,7 +10,7 @@ import 'isar_extensions_test.mocks.dart';
 import 'models/models.dart';
 import 'utils/fake_isar.dart';
 
-class MockObject extends ChangesyncBaseObject {
+class MockObject extends CrdtBaseObject {
   int id = Isar.autoIncrement;
   MockObject();
 

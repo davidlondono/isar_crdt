@@ -78,7 +78,7 @@ class IsarChangesSync {
       final hlc = map['hlc'];
       return OperationChange(
           collection: collection,
-          operation: ChangesyncOperations.values.byName(map['operation']),
+          operation: CrdtOperations.values.byName(map['operation']),
           field: field,
           sid: id,
           value: value,

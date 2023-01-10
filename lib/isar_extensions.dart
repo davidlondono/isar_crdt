@@ -24,7 +24,7 @@ extension IsarC on Isar {
   }
 }
 
-extension IsarLinksImplChanges<T extends ChangesyncBaseObject>
+extension IsarLinksImplChanges<T extends CrdtBaseObject>
     on IsarLinksCommon<T> {
   Future<void> _saveChanges() async {
     final sourceId = requireAttached();
@@ -35,7 +35,7 @@ extension IsarLinksImplChanges<T extends ChangesyncBaseObject>
             collection: sourceCollection.name,
             field: linkName,
             sid: sid,
-            operation: ChangesyncOperations.addLink,
+            operation: CrdtOperations.addLink,
             value: targetCollection.getSid(obj)))
         .toList();
 
@@ -44,7 +44,7 @@ extension IsarLinksImplChanges<T extends ChangesyncBaseObject>
             collection: sourceCollection.name,
             field: linkName,
             sid: sid,
-            operation: ChangesyncOperations.removeLink,
+            operation: CrdtOperations.removeLink,
             value: targetCollection.getSid(obj)))
         .toList();
 
@@ -54,7 +54,7 @@ extension IsarLinksImplChanges<T extends ChangesyncBaseObject>
   }
 }
 
-extension IsarLinksChanges<T extends ChangesyncBaseObject> on IsarLinks<T> {
+extension IsarLinksChanges<T extends CrdtBaseObject> on IsarLinks<T> {
   Future<void> saveChanges() {
     final aa = this;
 
@@ -69,7 +69,7 @@ extension CollectionSchemaSid<T> on CollectionSchema<T> {
   get sidName => 'sid';
 }
 
-extension IsarCollectionChanges<T extends ChangesyncBaseObject>
+extension IsarCollectionChanges<T extends CrdtBaseObject>
     on IsarCollection<T> {
   String getSid(obj) => obj.sid;
   Map<String, dynamic> toJson(T obj) =>

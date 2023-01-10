@@ -4,7 +4,7 @@ import 'package:isar_crdt/models/crdt_base_object.dart';
 part 'models.g.dart';
 
 @collection
-class CarModel extends ChangesyncBaseObject {
+class CarModel extends CrdtBaseObject {
   Id id = Isar.autoIncrement;
   late String make;
   late String year;
