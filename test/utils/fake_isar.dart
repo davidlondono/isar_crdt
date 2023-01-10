@@ -5,6 +5,9 @@ class MockIsar extends Mock implements Isar {
   MockIsar();
 
   @override
+  String get name => "mock_isar";
+
+  @override
   Future<T> writeTxn<T>(Future<T> Function() callback,
       {bool silent = false}) async {
     return callback();

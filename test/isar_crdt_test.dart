@@ -1,12 +1,12 @@
 import 'package:test/test.dart';
-import 'package:isar_changesync/changes/isar_write_changes.dart';
-import 'package:isar_changesync/utils/hlc.dart';
+import 'package:isar_crdt/changes/isar_write_changes.dart';
+import 'package:isar_crdt/utils/hlc.dart';
 import 'package:mockito/annotations.dart';
 import 'package:mockito/mockito.dart';
 
-import 'package:isar_changesync/isar_changesync.dart';
+import 'package:isar_crdt/isar_crdt.dart';
 
-import 'isar_changesync_test.mocks.dart';
+import 'isar_crdt_test.mocks.dart';
 import 'utils/fake_isar.dart';
 
 final operationMock = OperationChange(

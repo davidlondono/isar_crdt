@@ -8,7 +8,7 @@ import 'package:isar/isar.dart';
 import 'package:isar/src/common/isar_links_common.dart' show IsarLinksCommon;
 
 import '../isar_extensions.dart';
-import '../models/changesync_base_object.dart';
+import '../models/crdt_base_object.dart';
 import '../models/operation_change.dart';
 
 abstract class _Transaction {

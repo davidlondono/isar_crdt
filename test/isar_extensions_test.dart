@@ -4,7 +4,7 @@ import 'package:test/test.dart';
 
 import 'package:isar/isar.dart';
 
-import 'package:isar_changesync/isar_changesync.dart';
+import 'package:isar_crdt/isar_crdt.dart';
 
 import 'isar_extensions_test.mocks.dart';
 import 'models/models.dart';

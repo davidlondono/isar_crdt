@@ -5,13 +5,13 @@ import 'package:isar/isar.dart';
 // ignore: implementation_imports
 import 'package:isar/src/common/isar_links_common.dart' show IsarLinksCommon;
 
-import 'isar_changesync.dart';
+import 'isar_crdt.dart';
 
-final Map<Isar, IsarChangesSync> _isarProcessors = {};
+final Map<String, IsarChangesSync> _isarProcessors = {};
 
 extension IsarC on Isar {
-  registerChanges(IsarChangesSync processor) {
-    _isarProcessors[this] = processor;
+  void registerChanges(IsarChangesSync processor) {
+    _isarProcessors[name] = processor;
   }
 
   @visibleForTesting
@@ -20,7 +20,7 @@ extension IsarC on Isar {
   }
 
   IsarChangesSync? get processor {
-    return _isarProcessors[this];
+    return _isarProcessors[name];
   }
 }
 
