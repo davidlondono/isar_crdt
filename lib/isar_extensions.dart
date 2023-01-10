@@ -24,8 +24,7 @@ extension IsarC on Isar {
   }
 }
 
-extension IsarLinksImplChanges<T extends CrdtBaseObject>
-    on IsarLinksCommon<T> {
+extension IsarLinksImplChanges<T extends CrdtBaseObject> on IsarLinksCommon<T> {
   Future<void> _saveChanges() async {
     final sourceId = requireAttached();
     final obj = await sourceCollection.get(sourceId);
@@ -69,8 +68,7 @@ extension CollectionSchemaSid<T> on CollectionSchema<T> {
   get sidName => 'sid';
 }
 
-extension IsarCollectionChanges<T extends CrdtBaseObject>
-    on IsarCollection<T> {
+extension IsarCollectionChanges<T extends CrdtBaseObject> on IsarCollection<T> {
   String getSid(obj) => obj.sid;
   Map<String, dynamic> toJson(T obj) =>
       jsonDecode(jsonEncode(obj)) as Map<String, dynamic>;

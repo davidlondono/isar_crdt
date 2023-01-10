@@ -62,8 +62,7 @@ class _SyncOperation {
 }
 
 class _SyncLinksTransaction extends _Transaction {
-  QueryBuilder<CrdtBaseObject, CrdtBaseObject,
-      QAfterFilterCondition> query;
+  QueryBuilder<CrdtBaseObject, CrdtBaseObject, QAfterFilterCondition> query;
   List<_SyncOperation> operations;
 
   List<IsarLinks<dynamic>> linksToSave = <IsarLinks<dynamic>>[];
@@ -209,8 +208,8 @@ class IsarWriteChanges {
 
     transactions.addAll(insertTransactions);
 
-    final updatesSplit = updatedInsertSplit.unmatched
-        .splitByOperation(CrdtOperations.update);
+    final updatesSplit =
+        updatedInsertSplit.unmatched.splitByOperation(CrdtOperations.update);
     final updateEntries = updatesSplit.matched
         .groupListsBy((element) => element.collection)
         .entries;
@@ -237,8 +236,8 @@ class IsarWriteChanges {
       transactions.add(_UpdateTransaction(
           collection: isarCollection, json: jsons, changes: entry.value));
     }
-    final linkedSplit = updatesSplit.unmatched.splitByOperations(
-        [CrdtOperations.addLink, CrdtOperations.removeLink]);
+    final linkedSplit = updatesSplit.unmatched
+        .splitByOperations([CrdtOperations.addLink, CrdtOperations.removeLink]);
 
     final linkedCleanSplit = linkedSplit.matched.splitMatch((linkChange) =>
         !deletedSplit.matched

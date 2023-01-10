@@ -20,11 +20,8 @@ class IsarModelProcessor<T extends CrdtBaseModel> extends ProcessData {
 
   @override
   Future<Hlc> canonicalTime() async {
-    final entry = await crdtCollection
-        .filter()
-        ._hlcIsNotEmpty()
-        ._sortByHlc()
-        .findFirst();
+    final entry =
+        await crdtCollection.filter()._hlcIsNotEmpty()._sortByHlc().findFirst();
     if (entry == null) return Hlc.zero(SidUtils.random());
     return Hlc.parse(entry.hlc);
   }
