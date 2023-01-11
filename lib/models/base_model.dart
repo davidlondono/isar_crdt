@@ -1,3 +1,5 @@
+// ignore_for_file: invalid_use_of_protected_member
+
 import 'dart:convert';
 
 import 'package:isar/isar.dart';
@@ -52,4 +54,48 @@ class CrdtBaseModel {
         hlc: Hlc.parse(hlc),
         modified: Hlc.parse(modified),
       );
+}
+
+extension CrdtBaseModelQueryFilter<T extends CrdtBaseModel>
+    on QueryBuilder<T, T, QFilterCondition> {
+  QueryBuilder<T, T, QAfterFilterCondition> hlcIsNotEmpty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(const FilterCondition.greaterThan(
+        property: 'hlc',
+        value: '',
+      ));
+    });
+  }
+
+  QueryBuilder<T, T, QAfterSortBy> sortByHlc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy('hlc', Sort.asc);
+    });
+  }
+
+  QueryBuilder<T, T, QAfterFilterCondition> hlcContains(String value,
+      {bool caseSensitive = true}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.contains(
+        property: r'hlc',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<T, T, QAfterFilterCondition> hlcGreaterThan(
+    String value, {
+    bool include = false,
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.greaterThan(
+        include: include,
+        property: r'hlc',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
 }
