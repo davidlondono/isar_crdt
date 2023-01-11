@@ -11,25 +11,70 @@ and the Flutter guide for
 [developing packages and plugins](https://flutter.dev/developing-packages).
 -->
 
+
+<h1 align="center">Isar Crdt</h1>
 TODO: Put a short description of the package here that helps potential users
 know whether this package might be useful for them.
+#Isar Crdt
+addon to add crdt capabilities to isar
+
 
 ## Features
-
-TODO: List what your package can do. Maybe include images, gifs, or videos.
+- Pure Dart
+- Save changes on collection
 
 ## Getting started
 
-TODO: List prerequisites and provide or point to information on how to
-start using the package.
+### 1. Add to pubspec.yaml
 
+```yaml
+dependencies:
+  isar_crdt: ^0.0.1
+```
 ## Usage
 
-TODO: Include short and useful examples for package users. Add longer examples
-to `/example` folder.
-
+1. extend your models with CrdtBaseObject
+- add toJson function and add all the fields you want to sync (include id and sid)
+2. Create a model to store the crdt changes and extends with ChangesyncBaseModel
+- no need to add anything
 ```dart
-const like = 'sample';
+// models
+@collection
+class CarModel extends CrdtBaseObject {
+  Id id = Isar.autoIncrement;
+  late String make;
+  late String year;
+
+  @override
+  Map<String, dynamic> toJson() {
+    return {
+      "id": id,
+      "sid": sid,
+      "make": make,
+      "year": year,
+    };
+  }
+}
+
+@collection
+class CrdtEntry extends ChangesyncBaseModel {}
+```
+3. add the models including the crdt model to the isar instance
+4. create a changesync instance and add it to the isar instance
+```dart
+  final isar = await Isar.open(
+      [CarModelSchema, CrdtEntrySchema],
+    );
+
+
+  final changesSync = IsarCrdt(
+    store: IsarMasterCrdtStore(
+      isar.crdtEntrys,
+      builder: () => CrdtEntry(),
+      sidGenerator: () => uuid.v4(),
+    ),
+  );
+  isar.setCrdt(changesSync);
 ```
 
 ## Additional information
