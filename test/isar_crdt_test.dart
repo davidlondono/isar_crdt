@@ -37,10 +37,12 @@ void main() {
   setUp(() {
     reset(store);
     reset(writer);
-    when(writer.writeTxn(any)).thenAnswer((realInvocation) {
-      final ee = realInvocation.positionalArguments[0]  as Function();
-      return ee();
-    },);
+    when(writer.writeTxn(any)).thenAnswer(
+      (realInvocation) {
+        final ee = realInvocation.positionalArguments[0] as Function();
+        return ee();
+      },
+    );
     when(store.queryChanges(
             hlcNode: anyNamed('hlcNode'), hlcSince: anyNamed('hlcSince')))
         .thenAnswer((realInvocation) async => [operationMock]);
