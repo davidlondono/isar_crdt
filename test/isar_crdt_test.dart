@@ -31,8 +31,7 @@ void main() {
   late IsarCrdt crdt;
   setUpAll(() async {
     // await Isar.initializeIsarCore(download: true);
-    crdt =
-        IsarCrdt(isar: isar, processor: processor, writer: writer);
+    crdt = IsarCrdt(isar: isar, processor: processor, writer: writer);
   });
   setUp(() {
     reset(processor);
