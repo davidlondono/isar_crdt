@@ -1,4 +1,4 @@
-name: isar_changesync
+name: isar_crdt
 description: A new Dart package project.
 version: 0.0.2
 homepage:

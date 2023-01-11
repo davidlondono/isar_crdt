@@ -5,27 +5,26 @@ import 'package:isar/isar.dart';
 // ignore: implementation_imports
 import 'package:isar/src/common/isar_links_common.dart' show IsarLinksCommon;
 
-import 'isar_changesync.dart';
+import 'isar_crdt.dart';
 
-final Map<Isar, IsarChangesSync> _isarProcessors = {};
+final Map<String, IsarCrdt> _isarProcessors = {};
 
 extension IsarC on Isar {
-  registerChanges(IsarChangesSync processor) {
-    _isarProcessors[this] = processor;
+  void registerChanges(IsarCrdt processor) {
+    _isarProcessors[name] = processor;
   }
 
   @visibleForTesting
-  Iterable<IsarChangesSync> getProcessors() {
+  Iterable<IsarCrdt> getProcessors() {
     return _isarProcessors.values;
   }
 
-  IsarChangesSync? get processor {
-    return _isarProcessors[this];
+  IsarCrdt? get processor {
+    return _isarProcessors[name];
   }
 }
 
-extension IsarLinksImplChanges<T extends ChangesyncBaseObject>
-    on IsarLinksCommon<T> {
+extension IsarLinksImplChanges<T extends CrdtBaseObject> on IsarLinksCommon<T> {
   Future<void> _saveChanges() async {
     final sourceId = requireAttached();
     final obj = await sourceCollection.get(sourceId);
@@ -35,7 +34,7 @@ extension IsarLinksImplChanges<T extends ChangesyncBaseObject>
             collection: sourceCollection.name,
             field: linkName,
             sid: sid,
-            operation: ChangesyncOperations.addLink,
+            operation: CrdtOperations.addLink,
             value: targetCollection.getSid(obj)))
         .toList();
 
@@ -44,7 +43,7 @@ extension IsarLinksImplChanges<T extends ChangesyncBaseObject>
             collection: sourceCollection.name,
             field: linkName,
             sid: sid,
-            operation: ChangesyncOperations.removeLink,
+            operation: CrdtOperations.removeLink,
             value: targetCollection.getSid(obj)))
         .toList();
 
@@ -54,7 +53,7 @@ extension IsarLinksImplChanges<T extends ChangesyncBaseObject>
   }
 }
 
-extension IsarLinksChanges<T extends ChangesyncBaseObject> on IsarLinks<T> {
+extension IsarLinksChanges<T extends CrdtBaseObject> on IsarLinks<T> {
   Future<void> saveChanges() {
     final aa = this;
 
@@ -69,8 +68,7 @@ extension CollectionSchemaSid<T> on CollectionSchema<T> {
   get sidName => 'sid';
 }
 
-extension IsarCollectionChanges<T extends ChangesyncBaseObject>
-    on IsarCollection<T> {
+extension IsarCollectionChanges<T extends CrdtBaseObject> on IsarCollection<T> {
   String getSid(obj) => obj.sid;
   Map<String, dynamic> toJson(T obj) =>
       jsonDecode(jsonEncode(obj)) as Map<String, dynamic>;

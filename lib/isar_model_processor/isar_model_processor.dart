@@ -3,28 +3,25 @@
 import 'dart:async';
 
 import 'package:isar/isar.dart';
-import '../isar_changesync.dart';
+import '../isar_crdt.dart';
 import '../utils/sid.dart';
 
 import '../utils/hlc.dart';
 
-class IsarModelProcessor<T extends ChangesyncBaseModel> extends ProcessData {
-  final IsarCollection<T> changesyncCollection;
+class IsarModelProcessor<T extends CrdtBaseModel> extends ProcessData {
+  final IsarCollection<T> crdtCollection;
   final T Function() builder;
   final String Function() sidGenerator;
   IsarModelProcessor(
-    this.changesyncCollection, {
+    this.crdtCollection, {
     required this.builder,
     required this.sidGenerator,
   });
 
   @override
   Future<Hlc> canonicalTime() async {
-    final entry = await changesyncCollection
-        .filter()
-        ._hlcIsNotEmpty()
-        ._sortByHlc()
-        .findFirst();
+    final entry =
+        await crdtCollection.filter()._hlcIsNotEmpty()._sortByHlc().findFirst();
     if (entry == null) return Hlc.zero(SidUtils.random());
     return Hlc.parse(entry.hlc);
   }
@@ -38,7 +35,7 @@ class IsarModelProcessor<T extends ChangesyncBaseModel> extends ProcessData {
     String? hlcNode,
     Hlc? hlcSince,
   }) async {
-    var query = changesyncCollection.filter()._hlcIsNotEmpty();
+    var query = crdtCollection.filter()._hlcIsNotEmpty();
     if (hlcNode != null) {
       query = query._hlcContains(hlcNode);
     }
@@ -52,7 +49,7 @@ class IsarModelProcessor<T extends ChangesyncBaseModel> extends ProcessData {
   @override
   Future<void> storeChanges(List<OperationChange> changes) async {
     final entries = changes.map(changeToEntry).toList();
-    await changesyncCollection.putAll(entries);
+    await crdtCollection.putAll(entries);
   }
 
   @override
@@ -61,7 +58,7 @@ class IsarModelProcessor<T extends ChangesyncBaseModel> extends ProcessData {
   }
 }
 
-extension ChangesyncBaseModelQueryFilter<T extends ChangesyncBaseModel>
+extension CrdtBaseModelQueryFilter<T extends CrdtBaseModel>
     on QueryBuilder<T, T, QFilterCondition> {
   QueryBuilder<T, T, QAfterFilterCondition> _hlcIsNotEmpty() {
     return QueryBuilder.apply(this, (query) {

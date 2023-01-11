@@ -1,8 +1,8 @@
-import 'package:isar_changesync/isar_changesync.dart';
+import 'package:isar_crdt/isar_crdt.dart';
 import 'package:mockito/mockito.dart';
 
-class FMockIsarChangesSync extends Mock implements IsarChangesSync {
-  FMockIsarChangesSync();
+class FMockIsarCrdt extends Mock implements IsarCrdt {
+  FMockIsarCrdt();
   // Implement the required methods with mock behavior
 
   @override

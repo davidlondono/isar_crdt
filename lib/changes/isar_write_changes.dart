@@ -8,7 +8,7 @@ import 'package:isar/isar.dart';
 import 'package:isar/src/common/isar_links_common.dart' show IsarLinksCommon;
 
 import '../isar_extensions.dart';
-import '../models/changesync_base_object.dart';
+import '../models/crdt_base_object.dart';
 import '../models/operation_change.dart';
 
 abstract class _Transaction {
@@ -62,8 +62,7 @@ class _SyncOperation {
 }
 
 class _SyncLinksTransaction extends _Transaction {
-  QueryBuilder<ChangesyncBaseObject, ChangesyncBaseObject,
-      QAfterFilterCondition> query;
+  QueryBuilder<CrdtBaseObject, CrdtBaseObject, QAfterFilterCondition> query;
   List<_SyncOperation> operations;
 
   List<IsarLinks<dynamic>> linksToSave = <IsarLinks<dynamic>>[];
@@ -92,7 +91,7 @@ class _SyncLinksTransaction extends _Transaction {
         throw Exception("Links not found");
       }
       final sids = operations.map((e) => e.sid).toList();
-      if (links is IsarLinksCommon<ChangesyncBaseObject>) {
+      if (links is IsarLinksCommon<CrdtBaseObject>) {
         final objects =
             await links.targetCollection._queryBySids(sids).findAll();
 
@@ -184,7 +183,7 @@ class IsarWriteChanges {
     final transactions = List<_Transaction>.empty(growable: true);
 
     /// Delete records transaction
-    final deletedSplit = records.splitByOperation(ChangesyncOperations.delete);
+    final deletedSplit = records.splitByOperation(CrdtOperations.delete);
 
     final deleteTransactions = _mapDeleteTransactions(deletedSplit.matched);
 
@@ -198,10 +197,10 @@ class IsarWriteChanges {
 
     /// Insert records transaction
     final insertSplit = recordsNotDeletedSplit.unmatched
-        .splitByOperation(ChangesyncOperations.insert);
+        .splitByOperation(CrdtOperations.insert);
 
     final updatedInsertSplit = insertSplit.unmatched.splitMatch((record) =>
-        record.operation == ChangesyncOperations.update &&
+        record.operation == CrdtOperations.update &&
         insertSplit.matched.any((inserted) => inserted.sid == record.sid));
 
     final insertTransactions = await _mapInsertTransactions(
@@ -209,8 +208,8 @@ class IsarWriteChanges {
 
     transactions.addAll(insertTransactions);
 
-    final updatesSplit = updatedInsertSplit.unmatched
-        .splitByOperation(ChangesyncOperations.update);
+    final updatesSplit =
+        updatedInsertSplit.unmatched.splitByOperation(CrdtOperations.update);
     final updateEntries = updatesSplit.matched
         .groupListsBy((element) => element.collection)
         .entries;
@@ -237,8 +236,8 @@ class IsarWriteChanges {
       transactions.add(_UpdateTransaction(
           collection: isarCollection, json: jsons, changes: entry.value));
     }
-    final linkedSplit = updatesSplit.unmatched.splitByOperations(
-        [ChangesyncOperations.addLink, ChangesyncOperations.removeLink]);
+    final linkedSplit = updatesSplit.unmatched
+        .splitByOperations([CrdtOperations.addLink, CrdtOperations.removeLink]);
 
     final linkedCleanSplit = linkedSplit.matched.splitMatch((linkChange) =>
         !deletedSplit.matched
@@ -250,7 +249,7 @@ class IsarWriteChanges {
     for (final linkedMaped in linksByColection) {
       final collection = linkedMaped.key;
       final isarCollection = isar.getCollectionByNameInternal(collection)
-          as IsarCollection<ChangesyncBaseObject>?;
+          as IsarCollection<CrdtBaseObject>?;
 
       final linkedByField =
           linkedMaped.value.groupListsBy((element) => element.sid).entries;
@@ -272,7 +271,7 @@ class IsarWriteChanges {
         transactions.add(_SyncLinksTransaction(operations: [
           for (final record in linkedClean)
             _SyncOperation(
-                type: record.operation == ChangesyncOperations.addLink
+                type: record.operation == CrdtOperations.addLink
                     ? _SyncOperationType.add
                     : _SyncOperationType.remove,
                 field: record.field!,
@@ -289,12 +288,12 @@ class IsarWriteChanges {
 }
 
 extension _CollectionsOperations on Iterable<OperationChange> {
-  ListMatch<OperationChange> splitByOperation(ChangesyncOperations operation) {
+  ListMatch<OperationChange> splitByOperation(CrdtOperations operation) {
     return splitMatch((element) => element.operation == operation);
   }
 
   ListMatch<OperationChange> splitByOperations(
-      List<ChangesyncOperations> operations) {
+      List<CrdtOperations> operations) {
     return splitMatch((element) => operations.contains(element.operation));
   }
 }

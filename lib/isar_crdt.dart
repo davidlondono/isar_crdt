@@ -23,11 +23,11 @@ abstract class ProcessData {
   String generateRandomSid();
 }
 
-class IsarChangesSync {
+class IsarCrdt {
   final Isar isar;
   final ProcessData processor;
   final IsarWriteChanges? writer;
-  const IsarChangesSync({
+  const IsarCrdt({
     required this.isar,
     required this.processor,
     this.writer,
@@ -78,7 +78,7 @@ class IsarChangesSync {
       final hlc = map['hlc'];
       return OperationChange(
           collection: collection,
-          operation: ChangesyncOperations.values.byName(map['operation']),
+          operation: CrdtOperations.values.byName(map['operation']),
           field: field,
           sid: id,
           value: value,
