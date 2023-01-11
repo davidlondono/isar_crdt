@@ -23,11 +23,11 @@ abstract class ProcessData {
   String generateRandomSid();
 }
 
-class IsarChangesSync {
+class IsarCrdt {
   final Isar isar;
   final ProcessData processor;
   final IsarWriteChanges? writer;
-  const IsarChangesSync({
+  const IsarCrdt({
     required this.isar,
     required this.processor,
     this.writer,

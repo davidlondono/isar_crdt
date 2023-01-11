@@ -43,7 +43,7 @@ int Function(MockObject) returnGetId() => (MockObject obj) => obj.id;
 QueryBuilderInternal<MockObject> returnQuery() => MockQueryBuilderInternal();
 
 @GenerateMocks([
-  IsarChangesSync,
+  IsarCrdt,
 ], customMocks: [
   MockSpec<IsarCollection<MockObject>>(
       as: #MockIsarCollection, onMissingStub: OnMissingStub.returnDefault),
@@ -56,8 +56,8 @@ QueryBuilderInternal<MockObject> returnQuery() => MockQueryBuilderInternal();
 void main() {
   final mockIsar = MockIsar();
   late Isar isar;
-  // Create a mock IsarChangesSync processor
-  final mockProcessor = MockIsarChangesSync();
+  // Create a mock IsarCrdt processor
+  final mockProcessor = MockIsarCrdt();
   final collection = MockIsarCollection();
   final schema = MockCollectionSchema();
   final query = MockQueryBuilder();

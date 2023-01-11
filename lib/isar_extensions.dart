@@ -7,19 +7,19 @@ import 'package:isar/src/common/isar_links_common.dart' show IsarLinksCommon;
 
 import 'isar_crdt.dart';
 
-final Map<String, IsarChangesSync> _isarProcessors = {};
+final Map<String, IsarCrdt> _isarProcessors = {};
 
 extension IsarC on Isar {
-  void registerChanges(IsarChangesSync processor) {
+  void registerChanges(IsarCrdt processor) {
     _isarProcessors[name] = processor;
   }
 
   @visibleForTesting
-  Iterable<IsarChangesSync> getProcessors() {
+  Iterable<IsarCrdt> getProcessors() {
     return _isarProcessors.values;
   }
 
-  IsarChangesSync? get processor {
+  IsarCrdt? get processor {
     return _isarProcessors[name];
   }
 }

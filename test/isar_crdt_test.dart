@@ -28,11 +28,11 @@ void main() {
   final processor = MockProcessData();
   final writer = MockIsarWriteChanges();
   final isar = MockIsar();
-  late IsarChangesSync changesSync;
+  late IsarCrdt crdt;
   setUpAll(() async {
     // await Isar.initializeIsarCore(download: true);
-    changesSync =
-        IsarChangesSync(isar: isar, processor: processor, writer: writer);
+    crdt =
+        IsarCrdt(isar: isar, processor: processor, writer: writer);
   });
   setUp(() {
     reset(processor);
@@ -43,14 +43,14 @@ void main() {
   });
   group("getChanges", () {
     test('get all changes', () async {
-      final changes = await changesSync.getChanges();
+      final changes = await crdt.getChanges();
       verify(processor.queryChanges(hlcNode: null, hlcSince: null));
       expect(changes, [operationMock]);
     });
 
     test('changes since date', () async {
       final hlsModified = Hlc.now('hlsModified');
-      final changes = await changesSync.getChanges(modifiedSince: hlsModified);
+      final changes = await crdt.getChanges(modifiedSince: hlsModified);
       expect(
           verify(processor.queryChanges(
                   hlcNode: null,
@@ -63,7 +63,7 @@ void main() {
       final canonicalTime = Hlc.now('canonicalTime');
       when(processor.canonicalTime()).thenAnswer((_) async => canonicalTime);
 
-      final changes = await changesSync.getChanges(onlyModifiedHere: true);
+      final changes = await crdt.getChanges(onlyModifiedHere: true);
 
       expect(
           verify(processor.queryChanges(
@@ -81,7 +81,7 @@ void main() {
       when(isar.clear()).thenAnswer((realInvocation) async {});
       when(processor.storeChanges(any)).thenAnswer((realInvocation) async {});
 
-      await changesSync.clearRebuild();
+      await crdt.clearRebuild();
 
       verify(isar.clear());
       expect(verify(processor.storeChanges(captureAny)).captured, [
