@@ -1,3 +1,5 @@
+import 'package:isar_crdt/store/store.dart';
+import 'package:isar_crdt/utils/hlc.dart';
 import 'package:mockito/annotations.dart';
 import 'package:mockito/mockito.dart';
 import 'package:test/test.dart';
@@ -43,8 +45,10 @@ int Function(MockObject) returnGetId() => (MockObject obj) => obj.id;
 QueryBuilderInternal<MockObject> returnQuery() => MockQueryBuilderInternal();
 
 @GenerateMocks([
-  IsarCrdt,
+  CrdtStore
 ], customMocks: [
+  MockSpec<IsarCrdt>(
+      as: #MockIsarCrdt, onMissingStub: OnMissingStub.returnDefault),
   MockSpec<IsarCollection<MockObject>>(
       as: #MockIsarCollection, onMissingStub: OnMissingStub.returnDefault),
   MockSpec<QueryBuilder<MockObject, MockObject, QFilterCondition>>(
@@ -57,10 +61,14 @@ void main() {
   final mockIsar = MockIsar();
   late Isar isar;
   // Create a mock IsarCrdt processor
-  final mockProcessor = MockIsarCrdt();
+  final store = MockCrdtStore();
   final collection = MockIsarCollection();
   final schema = MockCollectionSchema();
   final query = MockQueryBuilder();
+
+  final mockProcessor = IsarCrdt(
+    store: store,
+  );
   setUp(() async {
     // Call the registerChanges() method
     await Isar.initializeIsarCore(download: true);
@@ -69,18 +77,21 @@ void main() {
       [CarModelSchema],
     );
 
-    mockIsar.registerChanges(mockProcessor);
-    isar.registerChanges(mockProcessor);
+    mockIsar.setCrdt(mockProcessor);
+    isar.setCrdt(mockProcessor);
+    when(store.canonicalTime()).thenAnswer((_) async => Hlc.now('nodeId'));
     when(collection.name).thenReturn("MockIsarCollection");
     when(collection.schema).thenReturn(schema);
     when(collection.isar).thenReturn(mockIsar);
     when(collection.filter()).thenReturn(query);
   });
 
+  // tearDownAll(() => isar.writeTxn(() => isar.clear()));
+
   tearDown(() => isar.close(deleteFromDisk: true));
   test('IsarC.registerChanges() adds processor to list', () {
     // Check that the mock processor has been added to the list
-    expect(isar.getProcessors(), contains(mockProcessor));
+    expect(isar.crdt!.store, store);
   });
 
   test('IsarCollectionChanges.getSid() return .sid of object', () {
@@ -117,7 +128,7 @@ void main() {
     await collection.deleteAllChanges([1, 2, 3]);
 
     // test
-    final verifySaveChanges = verify(mockProcessor.saveChanges(captureAny));
+    final verifySaveChanges = verify(store.storeChanges(captureAny));
     expect(verifySaveChanges.callCount, 1);
     expect(verifySaveChanges.captured.single, isA<List<NewOperationChange>>());
     expect(
@@ -144,7 +155,7 @@ void main() {
         return carCollection.putAllChanges(mocked);
       });
 
-      final verifySaveChanges = verify(mockProcessor.saveChanges(captureAny));
+      final verifySaveChanges = verify(store.storeChanges(captureAny));
       expect(verifySaveChanges.callCount, 1);
       final capturedOperations = verifySaveChanges.captured.single;
       expect(capturedOperations, isA<List<NewOperationChange>>());
@@ -165,6 +176,43 @@ void main() {
       ];
       expect(capturedOperations, equals(operations));
     });
-    test("must register edited items", () {});
+    test("must register edited items", () async {
+      // arrange
+      final carOne = CarModel.fabric("1")..sid = "sid_1";
+      final mocked = [
+        carOne,
+        CarModel.fabric("2")..sid = "sid_edit_2",
+        CarModel.fabric("3")..sid = "sid_edit_3",
+      ];
+      final carCollection = isar.collection<CarModel>();
+
+      // call
+      await isar.writeTxn(() async {
+        await carCollection.putAll(mocked);
+        final car = await carCollection.getBySid("sid_1");
+        car!.year = "year 1 edited";
+        car.make = "make 1 edited";
+        return carCollection.putChanges(car);
+      });
+
+      final verifySaveChanges = verify(store.storeChanges(captureAny));
+      expect(verifySaveChanges.callCount, 1);
+      final capturedOperations = verifySaveChanges.captured.single;
+      expect(capturedOperations, isA<List<NewOperationChange>>());
+
+      final operations = [
+        NewOperationChange.edit(
+            collection: CarModelSchema.name,
+            sid: "sid_1",
+            field: "make",
+            value: "make 1 edited"),
+        NewOperationChange.edit(
+            collection: CarModelSchema.name,
+            sid: "sid_1",
+            field: "year",
+            value: "year 1 edited"),
+      ];
+      expect(capturedOperations, equals(operations));
+    });
   });
 }

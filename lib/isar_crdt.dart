@@ -42,7 +42,7 @@ class NoIsarConnected implements Exception {
 
 class IsarCrdt {
   final CrdtStore store;
-  IsarCrdtWriter? writer;
+  CrdtWriter? writer;
   IsarCrdt({
     required this.store,
     this.writer,

@@ -124,7 +124,7 @@ class _SyncLinksTransaction extends _Transaction {
   }
 }
 
-class IsarMasterCrdtWriter extends IsarCrdtWriter {
+class IsarMasterCrdtWriter extends CrdtWriter {
   final Isar isar;
 
   const IsarMasterCrdtWriter(this.isar);
