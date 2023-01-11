@@ -4,105 +4,17 @@ import 'dart:async';
 import 'dart:convert';
 
 import 'package:isar/isar.dart';
+import 'writer/writer.dart';
+import 'store/store.dart';
+import 'store/store_handler.dart';
 
-import 'changes/isar_write_changes.dart';
+import 'writer/master/master.dart';
 import 'models/operation_change.dart';
 import 'utils/hlc.dart';
 
 export 'models/models.dart';
-export 'isar_model_processor/isar_model_processor.dart';
+export 'store/master.dart';
 export 'isar_extensions.dart';
-
-abstract class ProcessData {
-  Future<Hlc> canonicalTime();
-  Future<List<OperationChange>> queryChanges({
-    String? hlcNode,
-    Hlc? hlcSince,
-  });
-  Future<void> storeChanges(List<OperationChange> changes);
-  String generateRandomSid();
-}
-
-class IsarCrdt {
-  final Isar isar;
-  final ProcessData processor;
-  final IsarWriteChanges? writer;
-  const IsarCrdt({
-    required this.isar,
-    required this.processor,
-    this.writer,
-  });
-
-  Future<Hlc> _canonicalTime() => processor.canonicalTime();
-
-  String generateRandomSid() => processor.generateRandomSid();
-
-  Future<List<OperationChange>> getChanges(
-      {Hlc? modifiedSince, bool onlyModifiedHere = false}) async {
-    String? hlcNode;
-    if (onlyModifiedHere) {
-      final time = await _canonicalTime();
-      hlcNode = time.nodeId;
-    }
-
-    return processor.queryChanges(hlcNode: hlcNode, hlcSince: modifiedSince);
-  }
-
-  Future<void> _updateTables({Hlc? since}) async {
-    final changes = await getChanges(modifiedSince: since);
-    if (changes.isEmpty) return;
-
-    await IsarWriteChanges(isar).upgradeChanges(changes);
-  }
-
-  Future<void> clearRebuild() async {
-    final changes = await getChanges();
-    if (changes.isEmpty) return;
-    await isar.writeTxn(() async {
-      await isar.clear();
-      await processor.storeChanges(changes);
-    });
-
-    await (writer ?? IsarWriteChanges(isar)).upgradeChanges(changes);
-  }
-
-  Future<Hlc> merge(List<Map<String, dynamic>> changeset) async {
-    final Hlc canonicalTime = changeset.fold<Hlc>(await _canonicalTime(),
-        (ct, map) => Hlc.recv(ct, Hlc.parse(map['hlc'])));
-
-    final newChanges = changeset.map((map) {
-      final collection = map['collection'] as String;
-      final field = map['field'] as String;
-      final id = map['id'];
-      final value = _encode(map['value']);
-      final hlc = map['hlc'];
-      return OperationChange(
-          collection: collection,
-          operation: CrdtOperations.values.byName(map['operation']),
-          field: field,
-          sid: id,
-          value: value,
-          hlc: hlc,
-          modified: canonicalTime);
-    }).toList();
-    await isar.writeTxn(() => processor.storeChanges(newChanges));
-    await _updateTables(since: canonicalTime);
-    return canonicalTime;
-  }
-
-  Future<void> saveChanges(List<NewOperationChange> changes) async {
-    final canonical = await _canonicalTime();
-    final hlc = Hlc.send(canonical);
-
-    final newChanges = changes
-        .map((change) => change.withHlc(hlc: hlc, modified: canonical))
-        .toList();
-
-    // TODO filter out changes that are already in the database
-
-    await processor.storeChanges(newChanges);
-  }
-}
 
 dynamic _encode(dynamic value) {
   if (value == null) return null;
@@ -123,4 +35,91 @@ dynamic _encode(dynamic value) {
       throw 'Unsupported type: ${value.runtimeType}';
   }
 }
-// q: what is the best way to handle this?
+
+class NoIsarConnected implements Exception {
+  NoIsarConnected();
+}
+
+class IsarCrdt {
+  final CrdtStore store;
+  CrdtWriter? writer;
+  IsarCrdt({
+    required this.store,
+    this.writer,
+  });
+
+  IsarCrdtStoreHandler _handler(Isar isar) {
+    writer ??= IsarMasterCrdtWriter(isar);
+    return IsarCrdtStoreHandler(store: store);
+  }
+
+  Future<Hlc> _canonicalTime() => store.canonicalTime();
+
+  Future<List<OperationChange>> getChanges(
+      {Hlc? modifiedSince, bool onlyModifiedHere = false}) async {
+    String? hlcNode;
+    if (onlyModifiedHere) {
+      final time = await _canonicalTime();
+      hlcNode = time.nodeId;
+    }
+
+    return store.queryChanges(hlcNode: hlcNode, hlcSince: modifiedSince);
+  }
+
+  Future<void> _updateTables({Hlc? since}) async {
+    final changes = await getChanges(modifiedSince: since);
+    if (changes.isEmpty) return;
+
+    await writer?.upgradeChanges(changes);
+  }
+
+  Future<void> clearRebuild() async {
+    if (writer == null) throw NoIsarConnected();
+    final changes = await getChanges();
+    if (changes.isEmpty) return;
+
+    await writer!.writeTxn(() async {
+      await writer!.clear();
+      await store.storeChanges(changes);
+    });
+
+    await writer!.upgradeChanges(changes);
+  }
+
+  Future<Hlc> merge(List<Map<String, dynamic>> changeset) async {
+    if (writer == null) throw NoIsarConnected();
+    final Hlc canonicalTime = changeset.fold<Hlc>(await _canonicalTime(),
+        (ct, map) => Hlc.recv(ct, Hlc.parse(map['hlc'])));
+
+    final newChanges = changeset.map((map) {
+      final collection = map['collection'] as String;
+      final field = map['field'] as String;
+      final id = map['id'];
+      final value = _encode(map['value']);
+      final hlc = map['hlc'];
+      return OperationChange(
+          collection: collection,
+          operation: CrdtOperations.values.byName(map['operation']),
+          field: field,
+          sid: id,
+          value: value,
+          hlc: hlc,
+          modified: canonicalTime);
+    }).toList();
+    await writer!.writeTxn(() => store.storeChanges(newChanges));
+    await _updateTables(since: canonicalTime);
+    return canonicalTime;
+  }
+}
+
+final Map<String, IsarCrdtStoreHandler> _isarProcessors = {};
+
+extension IsarCrdtExtension on Isar {
+  void setCrdt(IsarCrdt crdt) {
+    _isarProcessors[name] = crdt._handler(this);
+  }
+
+  IsarCrdtStoreHandler? get crdt {
+    return _isarProcessors[name];
+  }
+}

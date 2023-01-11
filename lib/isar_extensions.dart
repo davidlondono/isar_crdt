@@ -1,28 +1,10 @@
 import 'dart:convert';
-import 'package:meta/meta.dart';
 
 import 'package:isar/isar.dart';
 // ignore: implementation_imports
 import 'package:isar/src/common/isar_links_common.dart' show IsarLinksCommon;
 
 import 'isar_crdt.dart';
-
-final Map<String, IsarCrdt> _isarProcessors = {};
-
-extension IsarC on Isar {
-  void registerChanges(IsarCrdt processor) {
-    _isarProcessors[name] = processor;
-  }
-
-  @visibleForTesting
-  Iterable<IsarCrdt> getProcessors() {
-    return _isarProcessors.values;
-  }
-
-  IsarCrdt? get processor {
-    return _isarProcessors[name];
-  }
-}
 
 extension IsarLinksImplChanges<T extends CrdtBaseObject> on IsarLinksCommon<T> {
   Future<void> _saveChanges() async {
@@ -128,12 +110,12 @@ extension IsarCollectionChanges<T extends CrdtBaseObject> on IsarCollection<T> {
   }
 
   Future<List<int>> putAllChanges(List<T> elements) async {
-    if (isar.processor == null) {
+    if (isar.crdt == null) {
       return putAll(elements);
     }
     for (final element in elements) {
       if (element.sid.isEmpty) {
-        element.sid = isar.processor!.generateRandomSid();
+        element.sid = isar.crdt!.generateRandomSid();
       }
     }
     final elementsMatch =
@@ -167,7 +149,7 @@ extension IsarCollectionChanges<T extends CrdtBaseObject> on IsarCollection<T> {
   }
 
   Future<void> _saveNewOperationChange(List<NewOperationChange> changes) async {
-    isar.processor?.saveChanges(changes);
+    isar.crdt?.saveChanges(changes);
   }
 }
 

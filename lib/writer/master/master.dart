@@ -6,10 +6,8 @@ import "package:collection/collection.dart";
 import 'package:isar/isar.dart';
 // ignore: implementation_imports
 import 'package:isar/src/common/isar_links_common.dart' show IsarLinksCommon;
-
-import '../isar_extensions.dart';
-import '../models/crdt_base_object.dart';
-import '../models/operation_change.dart';
+import '../writer.dart';
+import '../../isar_crdt.dart';
 
 abstract class _Transaction {
   final List<OperationChange> changes;
@@ -126,10 +124,10 @@ class _SyncLinksTransaction extends _Transaction {
   }
 }
 
-class IsarWriteChanges {
+class IsarMasterCrdtWriter extends CrdtWriter {
   final Isar isar;
 
-  const IsarWriteChanges(this.isar);
+  const IsarMasterCrdtWriter(this.isar);
 
   List<_DeleteTransaction> _mapDeleteTransactions(
       List<OperationChange> deleteChanges) {
@@ -177,6 +175,7 @@ class IsarWriteChanges {
     return transactions;
   }
 
+  @override
   Future<void> upgradeChanges(List<OperationChange> records) async {
     if (records.isEmpty) return;
 
@@ -284,6 +283,16 @@ class IsarWriteChanges {
         await transaction.run();
       }
     });
+  }
+
+  @override
+  Future<T> writeTxn<T>(Future<T> Function() callback, {bool silent = false}) {
+    return isar.writeTxn(callback, silent: silent);
+  }
+
+  @override
+  Future<void> clear() {
+    return isar.clear();
   }
 }
 
