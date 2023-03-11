@@ -15,6 +15,7 @@ import 'utils/hlc.dart';
 export 'models/models.dart';
 export 'store/master.dart';
 export 'isar_extensions.dart';
+export 'utils/hlc.dart';
 
 dynamic _encode(dynamic value) {
   if (value == null) return null;
