@@ -1,0 +1,7 @@
+# melos_managed_dependency_overrides: isar_generator
+dependency_overrides:
+  isar_generator:
+    git:
+      url: https://github.com/Kiruel/isar
+      ref: fix/web_build
+      path: packages/isar_generator
