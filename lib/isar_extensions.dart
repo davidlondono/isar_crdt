@@ -16,6 +16,7 @@ extension IsarLinksImplChanges<T extends CrdtBaseObject> on IsarLinksCommon<T> {
             collection: sourceCollection.name,
             field: linkName,
             sid: sid,
+            workspace: obj.getWorkspace(),
             operation: CrdtOperations.addLink,
             value: targetCollection.getSid(obj)))
         .toList();
@@ -25,13 +26,14 @@ extension IsarLinksImplChanges<T extends CrdtBaseObject> on IsarLinksCommon<T> {
             collection: sourceCollection.name,
             field: linkName,
             sid: sid,
+            workspace: obj.getWorkspace(),
             operation: CrdtOperations.removeLink,
             value: targetCollection.getSid(obj)))
         .toList();
 
     await targetCollection
         ._saveNewOperationChange([...entriesAdd, ...entriesRemove]);
-    return save();
+    return await save();
   }
 }
 
@@ -67,42 +69,48 @@ extension IsarCollectionChanges<T extends CrdtBaseObject> on IsarCollection<T> {
   }
 
   Iterable<NewOperationChange> _getEditEntriesMap(
-          String id, Map<String, dynamic> json) =>
+          String id, Map<String, dynamic> json, String? workspace) =>
       json.keys
           .where((key) => json[key] != null)
           .where((key) => key != "id")
           .where((key) => key != "sid")
           .map((key) => NewOperationChange.edit(
-              collection: schema.name, sid: id, field: key, value: json[key]));
+              collection: schema.name,
+              sid: id,
+              field: key,
+              value: json[key],
+              workspace: workspace));
 
   NewOperationChange _getInsertEntry(T object) {
     final objId = getSid(object);
+    final workspace = object.getWorkspace();
     try {
       final json = toJson(object);
       json.remove(schema.idName);
       json.remove("sid");
       return NewOperationChange.insert(
-          collection: schema.name, sid: objId, value: json);
+          collection: schema.name,
+          sid: objId,
+          value: json,
+          workspace: workspace);
     } catch (e) {
       throw Exception("object $object needs to implements toJson() to work");
     }
   }
 
-  Future<bool> deleteChanges(int id) async {
-    final deleted = await deleteAllChanges([id]);
+  Future<bool> deleteChanges(T obj) async {
+    final deleted = await deleteAllChanges([obj]);
     return deleted == 1;
   }
 
-  Future<int> deleteAllChanges(List<int> ids) async {
-    final objs = await getAll(ids);
+  Future<int> deleteAllChanges(List<T> objs) async {
     final deletedEntries = objs
-        .map((obj) =>
-            NewOperationChange.delete(collection: name, sid: getSid(obj)))
+        .map((obj) => NewOperationChange.delete(
+            collection: name, sid: getSid(obj), workspace: obj.getWorkspace()))
         .toList();
 
     await _saveNewOperationChange(deletedEntries);
-
-    return deleteAll(ids);
+    return deleteAll(objs.map((e) => schema.getId(e)).toList());
   }
 
   Future<int> putChanges(T object) async {
@@ -129,15 +137,18 @@ extension IsarCollectionChanges<T extends CrdtBaseObject> on IsarCollection<T> {
       return q.idEqualTo(schema.getId(id));
     }).exportJson();
 
-    final updatedElementJsons = updateElements.map((e) => toJson(e));
+    final updatedElementJsons =
+        updateElements.map((e) => MapEntry(e, toJson(e)));
     final oldEditEntries = updatedElementJsons
         .map((toUpdate) {
           schema.idName;
-          final id = toUpdate[schema.sidName] as String;
-          final found = elementsFound.firstWhere(
-              (element) => element[schema.idName] == toUpdate[schema.idName]);
+          final id = toUpdate.value[schema.sidName] as String;
+          final found = elementsFound.firstWhere((element) =>
+              element[schema.idName] == toUpdate.value[schema.idName]);
+          final workspace = toUpdate.key.getWorkspace();
 
-          return _getEditEntriesMap(id, difference(found, toUpdate));
+          return _getEditEntriesMap(
+              id, difference(found, toUpdate.value), workspace);
         })
         .expand((element) => element)
         .toList();
@@ -149,7 +160,7 @@ extension IsarCollectionChanges<T extends CrdtBaseObject> on IsarCollection<T> {
   }
 
   Future<void> _saveNewOperationChange(List<NewOperationChange> changes) async {
-    isar.crdt?.saveChanges(changes);
+    await isar.crdt?.saveChanges(changes);
   }
 }
 

@@ -1,40 +1,24 @@
 // ignore_for_file: invalid_use_of_protected_member
 
 import 'dart:async';
-import 'dart:convert';
 
 import 'package:isar/isar.dart';
+import 'package:isar_crdt/operations/merge_change.dart';
+import 'package:isar_crdt/operations/storable_change.dart';
+import 'models/base_model.dart';
+import 'store/master.dart';
 import 'writer/writer.dart';
 import 'store/store.dart';
 import 'store/store_handler.dart';
 
 import 'writer/master/master.dart';
-import 'models/operation_change.dart';
 import 'utils/hlc.dart';
 
 export 'models/models.dart';
 export 'store/master.dart';
 export 'isar_extensions.dart';
-
-dynamic _encode(dynamic value) {
-  if (value == null) return null;
-  if (value is Map) return jsonEncode(value);
-
-  switch (value.runtimeType) {
-    case String:
-    case int:
-    case double:
-      return value;
-    case bool:
-      return value ? 1 : 0;
-    case DateTime:
-      return value.toUtc().toIso8601String();
-    case Hlc:
-      return value.toString();
-    default:
-      throw 'Unsupported type: ${value.runtimeType}';
-  }
-}
+export 'operations/merge_change.dart';
+export 'operations/operations.dart';
 
 class NoIsarConnected implements Exception {
   NoIsarConnected();
@@ -48,14 +32,29 @@ class IsarCrdt {
     this.writer,
   });
 
+  static IsarCrdt master<T extends CrdtBaseModel>({
+    required IsarCollection<T> crdtCollection,
+    required Future<T> Function() builder,
+    required String Function() sidGenerator,
+  }) {
+    return IsarCrdt(
+        store: IsarMasterCrdtStore(
+      crdtCollection,
+      builder: builder,
+      sidGenerator: sidGenerator,
+    ));
+  }
+
   IsarCrdtStoreHandler _handler(Isar isar) {
     writer ??= IsarMasterCrdtWriter(isar);
     return IsarCrdtStoreHandler(store: store);
   }
 
   Future<Hlc> _canonicalTime() => store.canonicalTime();
+  Hlc _canonicalTimeSync() => store.canonicalTimeSync();
+  String nodeIdSync() => _canonicalTimeSync().nodeId;
 
-  Future<List<OperationChange>> getChanges(
+  Future<List<StorableChange>> getChanges(
       {Hlc? modifiedSince, bool onlyModifiedHere = false}) async {
     String? hlcNode;
     if (onlyModifiedHere) {
@@ -64,6 +63,17 @@ class IsarCrdt {
     }
 
     return store.queryChanges(hlcNode: hlcNode, hlcSince: modifiedSince);
+  }
+
+  Stream<List<StorableChange>> watchChanges(
+      {Hlc? modifiedSince, bool onlyModifiedHere = false}) {
+    String? hlcNode;
+    if (onlyModifiedHere) {
+      final time = _canonicalTimeSync();
+      hlcNode = time.nodeId;
+    }
+
+    return store.watchChanges(hlcNode: hlcNode, hlcSince: modifiedSince);
   }
 
   Future<void> _updateTables({Hlc? since}) async {
@@ -86,27 +96,16 @@ class IsarCrdt {
     await writer!.upgradeChanges(changes);
   }
 
-  Future<Hlc> merge(List<Map<String, dynamic>> changeset) async {
+  Future<Hlc> merge(List<MergableChange> changeset) async {
     if (writer == null) throw NoIsarConnected();
-    final Hlc canonicalTime = changeset.fold<Hlc>(await _canonicalTime(),
-        (ct, map) => Hlc.recv(ct, Hlc.parse(map['hlc'])));
+    final Hlc canonicalTime = changeset.fold<Hlc>(
+        await _canonicalTime(), (ct, map) => Hlc.recv(ct, map.hlc));
 
-    final newChanges = changeset.map((map) {
-      final collection = map['collection'] as String;
-      final field = map['field'] as String;
-      final id = map['id'];
-      final value = _encode(map['value']);
-      final hlc = map['hlc'];
-      return OperationChange(
-          collection: collection,
-          operation: CrdtOperations.values.byName(map['operation']),
-          field: field,
-          sid: id,
-          value: value,
-          hlc: hlc,
-          modified: canonicalTime);
-    }).toList();
-    await writer!.writeTxn(() => store.storeChanges(newChanges));
+    final storableChanges = changeset
+        .map((map) => StorableChange(
+            change: map.change, hlc: map.hlc, modified: canonicalTime))
+        .toList();
+    await writer!.writeTxn(() => store.storeChanges(storableChanges));
     await _updateTables(since: canonicalTime);
     return canonicalTime;
   }

@@ -1,16 +1,31 @@
+import 'dart:convert';
+
 import 'package:collection/collection.dart';
 
 import '../utils/hlc.dart';
-
-enum CrdtOperations {
-  insert,
-  update,
-  delete,
-  addLink,
-  removeLink,
-}
+import 'operations.dart';
 
 bool isSameType<S, T>() => S == T;
+
+dynamic _encode(dynamic value) {
+  if (value == null) return null;
+  if (value is Map) return jsonEncode(value);
+
+  switch (value.runtimeType) {
+    case String:
+    case int:
+    case double:
+      return value;
+    case bool:
+      return value ? 1 : 0;
+    case DateTime:
+      return value.toUtc().toIso8601String();
+    case Hlc:
+      return value.toString();
+    default:
+      throw 'Unsupported type: ${value.runtimeType}';
+  }
+}
 
 class NewOperationChange {
   // attributes
@@ -19,6 +34,7 @@ class NewOperationChange {
   final String? field;
   final Object? value;
   final CrdtOperations operation;
+  final String? workspace;
 
   const NewOperationChange({
     required this.collection,
@@ -26,11 +42,13 @@ class NewOperationChange {
     required this.field,
     required this.value,
     required this.operation,
+    required this.workspace,
   });
   NewOperationChange.insert({
     required this.collection,
     required this.sid,
     required this.value,
+    required this.workspace,
   })  : operation = CrdtOperations.insert,
         field = null;
 
@@ -39,28 +57,25 @@ class NewOperationChange {
     required this.sid,
     required this.field,
     required this.value,
+    required this.workspace,
   }) : operation = CrdtOperations.update;
 
   NewOperationChange.delete({
     required this.collection,
     required this.sid,
+    required this.workspace,
   })  : operation = CrdtOperations.delete,
         field = null,
         value = null;
 
-  OperationChange withHlc({
-    required Hlc hlc,
-    required Hlc modified,
-  }) =>
-      OperationChange(
-        collection: collection,
-        sid: sid,
-        field: field,
-        value: value,
-        operation: operation,
-        hlc: hlc,
-        modified: modified,
-      );
+  NewOperationChange.fromJson(
+    Map<String, dynamic> map,
+  )   : collection = map['collection'] as String,
+        field = map['field'] as String,
+        sid = map['id'] as String,
+        workspace = map['workspace'] as String,
+        value = _encode(map['value']),
+        operation = CrdtOperations.values.byName(map['operation']);
 
   @override
   bool operator ==(Object other) {
@@ -108,7 +123,7 @@ class NewOperationChange {
       "sid": sid,
       "field": field,
       "value": value,
-      "operation": operation,
+      "operation": operation.name,
     };
   }
 
@@ -116,18 +131,4 @@ class NewOperationChange {
   String toString() {
     return 'NewOperationChange(collection: $collection, sid: $sid, field: $field, value: $value, operation: $operation)';
   }
-}
-
-class OperationChange extends NewOperationChange {
-  final Hlc hlc;
-  final Hlc modified;
-  const OperationChange({
-    required super.operation,
-    required super.collection,
-    required super.sid,
-    required super.field,
-    required super.value,
-    required this.hlc,
-    required this.modified,
-  });
 }

@@ -1,8 +1,11 @@
+import 'dart:io';
+
 import 'package:isar_crdt/store/store.dart';
 import 'package:isar_crdt/utils/hlc.dart';
 import 'package:mockito/annotations.dart';
 import 'package:mockito/mockito.dart';
 import 'package:test/test.dart';
+import 'package:path/path.dart' as path;
 
 import 'package:isar/isar.dart';
 
@@ -73,8 +76,12 @@ void main() {
     // Call the registerChanges() method
     await Isar.initializeIsarCore(download: true);
 
+    final dartToolDir = path.join(Directory.current.path, '.dart_tool');
+    final testTempPath = path.join(dartToolDir, 'test', 'tmp');
+    await Directory(testTempPath).create(recursive: true);
     isar = await Isar.open(
       [CarModelSchema],
+      directory: testTempPath,
     );
 
     mockIsar.setCrdt(mockProcessor);
@@ -117,15 +124,23 @@ void main() {
       () async {
     // arrange
 
+    final obj1 = MockObject()..sid = "sid_1";
+    final obj2 = MockObject()..sid = "sid_2";
+    final obj3 = MockObject()..sid = "sid_3";
+
     when(collection.getAll([1, 2, 3])).thenAnswer((_) async => [
-          MockObject()..sid = "sid_1",
-          MockObject()..sid = "sid_2",
-          MockObject()..sid = "sid_3",
+          obj1,
+          obj2,
+          obj3,
         ]);
     when(collection.deleteAll([1, 2, 3])).thenAnswer((_) async => 3);
 
     // call
-    await collection.deleteAllChanges([1, 2, 3]);
+    await collection.deleteAllChanges([
+      obj1,
+      obj2,
+      obj3,
+    ]);
 
     // test
     final verifySaveChanges = verify(store.storeChanges(captureAny));
@@ -134,9 +149,12 @@ void main() {
     expect(
         verifySaveChanges.captured.single,
         equals([
-          NewOperationChange.delete(collection: collection.name, sid: "sid_1"),
-          NewOperationChange.delete(collection: collection.name, sid: "sid_2"),
-          NewOperationChange.delete(collection: collection.name, sid: "sid_3")
+          NewOperationChange.delete(
+              collection: collection.name, sid: "sid_1", workspace: null),
+          NewOperationChange.delete(
+              collection: collection.name, sid: "sid_2", workspace: null),
+          NewOperationChange.delete(
+              collection: collection.name, sid: "sid_3", workspace: null),
         ]));
   });
 
@@ -164,15 +182,18 @@ void main() {
         NewOperationChange.insert(
             collection: CarModelSchema.name,
             sid: "sid_1",
-            value: {"make": "make 1", "year": "year 1"}),
+            value: {"make": "make 1", "year": "year 1"},
+            workspace: null),
         NewOperationChange.insert(
             collection: CarModelSchema.name,
             sid: "sid_2",
-            value: {"make": "make 2", "year": "year 2"}),
+            value: {"make": "make 2", "year": "year 2"},
+            workspace: null),
         NewOperationChange.insert(
             collection: CarModelSchema.name,
             sid: "sid_3",
-            value: {"make": "make 3", "year": "year 3"})
+            value: {"make": "make 3", "year": "year 3"},
+            workspace: null)
       ];
       expect(capturedOperations, equals(operations));
     });
@@ -205,12 +226,14 @@ void main() {
             collection: CarModelSchema.name,
             sid: "sid_1",
             field: "make",
-            value: "make 1 edited"),
+            value: "make 1 edited",
+            workspace: null),
         NewOperationChange.edit(
             collection: CarModelSchema.name,
             sid: "sid_1",
             field: "year",
-            value: "year 1 edited"),
+            value: "year 1 edited",
+            workspace: null),
       ];
       expect(capturedOperations, equals(operations));
     });

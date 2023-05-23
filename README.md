@@ -13,9 +13,6 @@ and the Flutter guide for
 
 
 <h1 align="center">Isar Crdt</h1>
-TODO: Put a short description of the package here that helps potential users
-know whether this package might be useful for them.
-#Isar Crdt
 addon to add crdt capabilities to isar
 
 

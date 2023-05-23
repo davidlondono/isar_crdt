@@ -12,4 +12,6 @@ abstract class CrdtBaseObject {
   IsarLinks<dynamic>? getLinks(String link) {
     throw UnimplementedError();
   }
+
+  String? getWorkspace() => null;
 }

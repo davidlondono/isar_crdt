@@ -1,15 +1,21 @@
 import 'dart:async';
 
-import '../models/operation_change.dart';
+import 'package:isar_crdt/operations/storable_change.dart';
+
 import '../utils/hlc.dart';
 
 abstract class CrdtStore {
   Future<Hlc> canonicalTime();
-  Future<List<OperationChange>> queryChanges({
+  Hlc canonicalTimeSync();
+  Future<List<StorableChange>> queryChanges({
     String? hlcNode,
     Hlc? hlcSince,
   });
-  Future<void> storeChanges(List<OperationChange> changes);
+  Stream<List<StorableChange>> watchChanges({
+    String? hlcNode,
+    Hlc? hlcSince,
+  });
+  Future<void> storeChanges(List<StorableChange> changes);
   String generateRandomSid();
 
   const CrdtStore();

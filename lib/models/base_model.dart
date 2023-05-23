@@ -3,11 +3,11 @@
 import 'dart:convert';
 
 import 'package:isar/isar.dart';
+import 'package:isar_crdt/models/models.dart';
+import 'package:isar_crdt/operations/operations.dart';
+import 'package:isar_crdt/operations/storable_change.dart';
 
-import 'operation_change.dart';
-import '../utils/hlc.dart';
-
-class CrdtBaseModel {
+abstract class CrdtBaseModel {
   CrdtBaseModel();
   Id id = Isar.autoIncrement;
   // attributes
@@ -19,6 +19,7 @@ class CrdtBaseModel {
   @Index()
   late String hlc;
   late String modified;
+  late String? workspace;
   Map<String, dynamic> toJson() {
     return {
       'id': id,
@@ -29,31 +30,31 @@ class CrdtBaseModel {
       'value': value,
       'hlc': hlc,
       'modified': modified,
+      'workspace': workspace,
     };
   }
 
-  // static CrdtBaseModel fromChange(OperationChange change) => CrdtBaseModel()
-  //   ..fromChange(change);
-
-  void fromChange(OperationChange change) {
-    collection = change.collection;
-    field = change.field;
-    rowId = change.sid;
-    operation = change.operation.name;
-    value = jsonEncode(change.value);
-    hlc = change.hlc.toString();
-    modified = change.modified.toString();
+  void fromChange(StorableChange sc) {
+    collection = sc.change.collection;
+    field = sc.change.field;
+    rowId = sc.change.sid;
+    operation = sc.change.operation.name;
+    value = jsonEncode(sc.change.value);
+    hlc = sc.hlc.toString();
+    modified = sc.modified.toString();
+    workspace = sc.change.workspace;
   }
 
-  OperationChange toChange() => OperationChange(
-        collection: collection,
-        field: field,
-        sid: rowId,
-        operation: CrdtOperations.values.byName(operation),
-        value: value != null ? jsonDecode(value!) : null,
-        hlc: Hlc.parse(hlc),
-        modified: Hlc.parse(modified),
-      );
+  NewOperationChange toOperationChange() {
+    return NewOperationChange(
+      collection: collection,
+      field: field,
+      sid: rowId,
+      operation: CrdtOperations.fromString(operation),
+      value: value,
+      workspace: workspace,
+    );
+  }
 }
 
 extension CrdtBaseModelQueryFilter<T extends CrdtBaseModel>

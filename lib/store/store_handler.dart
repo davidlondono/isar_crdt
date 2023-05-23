@@ -1,6 +1,8 @@
+import 'package:isar_crdt/operations/storable_change.dart';
+
 import '../utils/hlc.dart';
 
-import '../models/operation_change.dart';
+import '../operations/new_change.dart';
 import 'store.dart';
 
 class IsarCrdtStoreHandler {
@@ -16,7 +18,8 @@ class IsarCrdtStoreHandler {
     final hlc = Hlc.send(canonical);
 
     final newChanges = changes
-        .map((change) => change.withHlc(hlc: hlc, modified: canonical))
+        .map((change) =>
+            StorableChange(change: change, hlc: hlc, modified: canonical))
         .toList();
 
     // TODO filter out changes that are already in the database

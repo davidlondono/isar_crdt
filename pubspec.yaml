@@ -1,10 +1,8 @@
 name: isar_crdt
 description: A new Dart package project.
 version: 0.0.2
-homepage:
-
 environment:
-  sdk: '>=2.18.4 <3.0.0'
+  sdk: '>=3.0.0 <4.0.0'
 
 dependencies:
   isar: ^3.0.0
@@ -14,6 +12,7 @@ dependencies:
 dev_dependencies:
   lints: ^2.0.1
   test: ^1.22.0
-  mockito: ^5.3.2
+  mockito: ^5.4.0
   build_runner: ^2.3.2
   isar_generator: ^3.0.0
+  path: ^1.8.3

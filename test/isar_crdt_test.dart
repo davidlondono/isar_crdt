@@ -1,3 +1,4 @@
+import 'package:isar_crdt/operations/storable_change.dart';
 import 'package:isar_crdt/store/store.dart';
 import 'package:isar_crdt/utils/hlc.dart';
 import 'package:isar_crdt/writer/writer.dart';
@@ -10,14 +11,17 @@ import 'package:isar_crdt/isar_crdt.dart';
 import 'isar_crdt_test.mocks.dart';
 import 'utils/fake_isar.dart';
 
-final operationMock = OperationChange(
-    collection: 'CarModel',
-    field: 'ee',
-    hlc: Hlc.zero('mock'),
-    modified: Hlc.zero("nodeId"),
-    operation: CrdtOperations.addLink,
-    sid: "",
-    value: "ee");
+final operationMock = StorableChange(
+  change: NewOperationChange(
+      collection: 'CarModel',
+      field: 'ee',
+      operation: CrdtOperations.addLink,
+      sid: "",
+      value: "ee",
+      workspace: "workspace"),
+  hlc: Hlc.zero('mock'),
+  modified: Hlc.zero("nodeId"),
+);
 
 @GenerateMocks([
   CrdtStore,

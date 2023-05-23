@@ -3,6 +3,7 @@
 import 'dart:async';
 
 import 'package:isar/isar.dart';
+import 'package:isar_crdt/operations/storable_change.dart';
 import 'store.dart';
 import '../isar_crdt.dart';
 import '../utils/sid.dart';
@@ -11,8 +12,9 @@ import '../utils/hlc.dart';
 
 class IsarMasterCrdtStore<T extends CrdtBaseModel> extends CrdtStore {
   final IsarCollection<T> crdtCollection;
-  final T Function() builder;
+  final Future<T> Function() builder;
   final String Function() sidGenerator;
+
   IsarMasterCrdtStore(
     this.crdtCollection, {
     required this.builder,
@@ -27,12 +29,25 @@ class IsarMasterCrdtStore<T extends CrdtBaseModel> extends CrdtStore {
     return Hlc.parse(entry.hlc);
   }
 
-  OperationChange _entryToChange(T entry) => entry.toChange();
+  @override
+  Hlc canonicalTimeSync() {
+    final entry =
+        crdtCollection.filter().hlcIsNotEmpty().sortByHlc().findFirstSync();
+    if (entry == null) return Hlc.zero(SidUtils.random());
+    return Hlc.parse(entry.hlc);
+  }
 
-  T _changeToEntry(OperationChange change) => builder()..fromChange(change);
+  StorableChange _entryToChange(T entry) =>
+      StorableChange.fromOperationChange(change: entry);
+
+  Future<T> _changeToEntry(StorableChange change) async {
+    final changeBuild = await builder();
+    changeBuild.fromChange(change);
+    return changeBuild;
+  }
 
   @override
-  Future<List<OperationChange>> queryChanges({
+  Future<List<StorableChange>> queryChanges({
     String? hlcNode,
     Hlc? hlcSince,
   }) async {
@@ -48,8 +63,24 @@ class IsarMasterCrdtStore<T extends CrdtBaseModel> extends CrdtStore {
   }
 
   @override
-  Future<void> storeChanges(List<OperationChange> changes) async {
-    final entries = changes.map(_changeToEntry).toList();
+  Stream<List<StorableChange>> watchChanges({
+    String? hlcNode,
+    Hlc? hlcSince,
+  }) {
+    var query = crdtCollection.filter().hlcIsNotEmpty();
+    if (hlcNode != null) {
+      query = query.hlcContains(hlcNode);
+    }
+    if (hlcSince != null) {
+      query = query.hlcGreaterThan(hlcSince.toString());
+    }
+    final values = query.watch(fireImmediately: true);
+    return values.map((e) => e.map(_entryToChange).toList());
+  }
+
+  @override
+  Future<void> storeChanges(List<StorableChange> changes) async {
+    final entries = await Future.wait(changes.map(_changeToEntry));
     await crdtCollection.putAll(entries);
   }
 
