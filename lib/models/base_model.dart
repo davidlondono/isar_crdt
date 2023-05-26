@@ -39,7 +39,7 @@ abstract class CrdtBaseModel {
     field = sc.change.field;
     rowId = sc.change.sid;
     operation = sc.change.operation.name;
-    value = jsonEncode(sc.change.value);
+    value = sc.change.value.toString();
     hlc = sc.hlc.toString();
     modified = sc.modified.toString();
     workspace = sc.change.workspace;

@@ -1,6 +1,7 @@
 // ignore_for_file: invalid_use_of_protected_member
 
 import 'dart:async';
+import 'dart:convert';
 
 import "package:collection/collection.dart";
 import 'package:isar/isar.dart';
@@ -41,7 +42,9 @@ class _UpdateTransaction extends _Transaction {
   });
 
   @override
-  Future<void> run() => collection.importJson(json);
+  Future<void> run() async {
+    await collection.importJson(json);
+  }
 }
 
 enum _SyncOperationType {
@@ -160,15 +163,24 @@ class IsarMasterCrdtWriter extends CrdtWriter {
             objects.firstWhereOrNull((js) => js["sid"] == e.change.sid) ??
                 <String, dynamic>{
                   "sid": e.change.sid,
+                  "workspace": e.change.workspace,
                 };
 
-        updatesInsertedChanges
+        if (e.change.value == null)
+          throw Exception(
+              "Value is null for $element on collection $collection and sid ${e.change.sid}");
+        json.addAll(jsonDecode(e.change.value.toString()));
+        final entries = updatesInsertedChanges
             .where((element) =>
                 element.change.sid == e.change.sid &&
                 element.change.collection == e.change.collection)
-            .forEach((element) {
-          json[element.change.field!] = element.change.value;
+            .map((element) {
+          return MapEntry(element.change.field!,
+              jsonDecode(element.change.value.toString()));
         });
+
+        final mapEntries = Map.fromEntries(entries);
+        json.addAll(mapEntries);
         return json;
       }).toList();
 
@@ -286,8 +298,13 @@ class IsarMasterCrdtWriter extends CrdtWriter {
       }
     }
     await isar.writeTxn(() async {
-      for (final transaction in transactions) {
-        await transaction.run();
+      try {
+        for (final transaction in transactions) {
+          await transaction.run();
+        }
+      } catch (e, stackTrace) {
+        print(stackTrace);
+        print(e);
       }
     });
   }

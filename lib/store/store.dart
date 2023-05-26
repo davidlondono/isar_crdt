@@ -18,5 +18,8 @@ abstract class CrdtStore {
   Future<void> storeChanges(List<StorableChange> changes);
   String generateRandomSid();
 
+
+  String get nodeId;
+
   const CrdtStore();
 }
