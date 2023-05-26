@@ -1,6 +1,5 @@
 // ignore_for_file: invalid_use_of_protected_member
 
-
 import 'package:isar/isar.dart';
 import 'package:isar_crdt/models/models.dart';
 import 'package:isar_crdt/operations/operations.dart';
