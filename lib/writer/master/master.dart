@@ -166,9 +166,10 @@ class IsarMasterCrdtWriter extends CrdtWriter {
                   "workspace": e.change.workspace,
                 };
 
-        if (e.change.value == null)
+        if (e.change.value == null) {
           throw Exception(
               "Value is null for $element on collection $collection and sid ${e.change.sid}");
+        }
         json.addAll(jsonDecode(e.change.value.toString()));
         final entries = updatesInsertedChanges
             .where((element) =>

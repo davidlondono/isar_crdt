@@ -148,7 +148,8 @@ void main() {
     final verifySaveChanges = verify(store.storeChanges(captureAny));
     expect(verifySaveChanges.callCount, 1);
     expect(verifySaveChanges.captured.single, isA<List<StorableChange>>());
-    final capturedChanges = verifySaveChanges.captured.single as List<StorableChange>;
+    final capturedChanges =
+        verifySaveChanges.captured.single as List<StorableChange>;
     expect(
         capturedChanges.map((e) => e.change).toList(),
         equals([
@@ -179,8 +180,8 @@ void main() {
       final verifySaveChanges = verify(store.storeChanges(captureAny));
       expect(verifySaveChanges.callCount, 1);
       expect(verifySaveChanges.captured.single, isA<List<StorableChange>>());
-      final capturedOperations = verifySaveChanges.captured.single as List<StorableChange>;
-
+      final capturedOperations =
+          verifySaveChanges.captured.single as List<StorableChange>;
 
       final operations = [
         NewOperationChange.insert(
@@ -199,7 +200,8 @@ void main() {
             value: {"make": "make 3", "year": "year 3"},
             workspace: testWorkspace)
       ];
-      expect(capturedOperations.map((e) => e.change).toList(), equals(operations));
+      expect(
+          capturedOperations.map((e) => e.change).toList(), equals(operations));
     });
     test("must register edited items", () async {
       // arrange
@@ -223,7 +225,8 @@ void main() {
       final verifySaveChanges = verify(store.storeChanges(captureAny));
       expect(verifySaveChanges.callCount, 1);
       expect(verifySaveChanges.captured.single, isA<List<StorableChange>>());
-      final capturedOperations = verifySaveChanges.captured.single as List<StorableChange>;
+      final capturedOperations =
+          verifySaveChanges.captured.single as List<StorableChange>;
 
       final operations = [
         NewOperationChange.edit(
@@ -239,7 +242,8 @@ void main() {
             value: "year 1 edited",
             workspace: testWorkspace),
       ];
-      expect(capturedOperations.map((e) => e.change).toList(), equals(operations));
+      expect(
+          capturedOperations.map((e) => e.change).toList(), equals(operations));
     });
   });
 }

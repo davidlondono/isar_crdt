@@ -98,16 +98,14 @@ class IsarCrdt {
   Future<Hlc> merge(List<MergableChange> changeset) async {
     if (writer == null) throw NoIsarConnected();
     final initialTime = await _canonicalTime();
-    final Hlc canonicalTime = changeset.fold<Hlc>(
-        initialTime, (ct, map) {
-          try {
-           return Hlc.recv(ct, map.hlc);
-
-          } catch (e) {
-            print(e);
-            return ct;
-          }
-        });
+    final Hlc canonicalTime = changeset.fold<Hlc>(initialTime, (ct, map) {
+      try {
+        return Hlc.recv(ct, map.hlc);
+      } catch (e) {
+        print(e);
+        return ct;
+      }
+    });
 
     final storableChanges = changeset
         .map((map) => StorableChange(

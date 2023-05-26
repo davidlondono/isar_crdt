@@ -28,7 +28,5 @@ class CarModel extends CrdtBaseObject {
   }
 }
 
-
 @collection
-class CrdtModel extends CrdtBaseModel {
-}
+class CrdtModel extends CrdtBaseModel {}

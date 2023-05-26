@@ -78,8 +78,7 @@ void main() {
       verifyNever(store.canonicalTime());
       expect(
           verify(store.queryChanges(
-                  hlcNode:
-                      captureThat(same(nodeId), named: "hlcNode"),
+                  hlcNode: captureThat(same(nodeId), named: "hlcNode"),
                   hlcSince: null))
               .captured,
           [nodeId]);
