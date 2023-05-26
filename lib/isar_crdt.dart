@@ -36,12 +36,14 @@ class IsarCrdt {
     required IsarCollection<T> crdtCollection,
     required Future<T> Function() builder,
     required String Function() sidGenerator,
+    required String nodeId,
   }) {
     return IsarCrdt(
         store: IsarMasterCrdtStore(
       crdtCollection,
       builder: builder,
       sidGenerator: sidGenerator,
+      nodeId: nodeId,
     ));
   }
 
@@ -51,15 +53,13 @@ class IsarCrdt {
   }
 
   Future<Hlc> _canonicalTime() => store.canonicalTime();
-  Hlc _canonicalTimeSync() => store.canonicalTimeSync();
-  String nodeIdSync() => _canonicalTimeSync().nodeId;
+  String nodeIdSync() => store.nodeId;
 
   Future<List<StorableChange>> getChanges(
       {Hlc? modifiedSince, bool onlyModifiedHere = false}) async {
     String? hlcNode;
     if (onlyModifiedHere) {
-      final time = await _canonicalTime();
-      hlcNode = time.nodeId;
+      hlcNode = store.nodeId;
     }
 
     return store.queryChanges(hlcNode: hlcNode, hlcSince: modifiedSince);
@@ -69,8 +69,7 @@ class IsarCrdt {
       {Hlc? modifiedSince, bool onlyModifiedHere = false}) {
     String? hlcNode;
     if (onlyModifiedHere) {
-      final time = _canonicalTimeSync();
-      hlcNode = time.nodeId;
+      hlcNode = store.nodeId;
     }
 
     return store.watchChanges(hlcNode: hlcNode, hlcSince: modifiedSince);
@@ -98,8 +97,15 @@ class IsarCrdt {
 
   Future<Hlc> merge(List<MergableChange> changeset) async {
     if (writer == null) throw NoIsarConnected();
-    final Hlc canonicalTime = changeset.fold<Hlc>(
-        await _canonicalTime(), (ct, map) => Hlc.recv(ct, map.hlc));
+    final initialTime = await _canonicalTime();
+    final Hlc canonicalTime = changeset.fold<Hlc>(initialTime, (ct, map) {
+      try {
+        return Hlc.recv(ct, map.hlc);
+      } catch (e) {
+        print(e);
+        return ct;
+      }
+    });
 
     final storableChanges = changeset
         .map((map) => StorableChange(

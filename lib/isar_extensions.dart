@@ -88,6 +88,7 @@ extension IsarCollectionChanges<T extends CrdtBaseObject> on IsarCollection<T> {
       final json = toJson(object);
       json.remove(schema.idName);
       json.remove("sid");
+      json.remove("workspace");
       return NewOperationChange.insert(
           collection: schema.name,
           sid: objId,

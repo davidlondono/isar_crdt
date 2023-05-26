@@ -1,5 +1,6 @@
 import 'dart:io';
 
+import 'package:isar_crdt/operations/storable_change.dart';
 import 'package:isar_crdt/store/store.dart';
 import 'package:isar_crdt/utils/hlc.dart';
 import 'package:mockito/annotations.dart';
@@ -72,6 +73,7 @@ void main() {
   final mockProcessor = IsarCrdt(
     store: store,
   );
+  final testWorkspace = 'test_workspace';
   setUp(() async {
     // Call the registerChanges() method
     await Isar.initializeIsarCore(download: true);
@@ -145,9 +147,11 @@ void main() {
     // test
     final verifySaveChanges = verify(store.storeChanges(captureAny));
     expect(verifySaveChanges.callCount, 1);
-    expect(verifySaveChanges.captured.single, isA<List<NewOperationChange>>());
+    expect(verifySaveChanges.captured.single, isA<List<StorableChange>>());
+    final capturedChanges =
+        verifySaveChanges.captured.single as List<StorableChange>;
     expect(
-        verifySaveChanges.captured.single,
+        capturedChanges.map((e) => e.change).toList(),
         equals([
           NewOperationChange.delete(
               collection: collection.name, sid: "sid_1", workspace: null),
@@ -165,7 +169,7 @@ void main() {
         CarModel.fabric("1")..sid = "sid_1",
         CarModel.fabric("2")..sid = "sid_2",
         CarModel.fabric("3")..sid = "sid_3",
-      ];
+      ].map((e) => e..workspace = testWorkspace).toList();
       final carCollection = isar.collection<CarModel>();
 
       // call
@@ -175,27 +179,29 @@ void main() {
 
       final verifySaveChanges = verify(store.storeChanges(captureAny));
       expect(verifySaveChanges.callCount, 1);
-      final capturedOperations = verifySaveChanges.captured.single;
-      expect(capturedOperations, isA<List<NewOperationChange>>());
+      expect(verifySaveChanges.captured.single, isA<List<StorableChange>>());
+      final capturedOperations =
+          verifySaveChanges.captured.single as List<StorableChange>;
 
       final operations = [
         NewOperationChange.insert(
             collection: CarModelSchema.name,
             sid: "sid_1",
             value: {"make": "make 1", "year": "year 1"},
-            workspace: null),
+            workspace: testWorkspace),
         NewOperationChange.insert(
             collection: CarModelSchema.name,
             sid: "sid_2",
             value: {"make": "make 2", "year": "year 2"},
-            workspace: null),
+            workspace: testWorkspace),
         NewOperationChange.insert(
             collection: CarModelSchema.name,
             sid: "sid_3",
             value: {"make": "make 3", "year": "year 3"},
-            workspace: null)
+            workspace: testWorkspace)
       ];
-      expect(capturedOperations, equals(operations));
+      expect(
+          capturedOperations.map((e) => e.change).toList(), equals(operations));
     });
     test("must register edited items", () async {
       // arrange
@@ -204,7 +210,7 @@ void main() {
         carOne,
         CarModel.fabric("2")..sid = "sid_edit_2",
         CarModel.fabric("3")..sid = "sid_edit_3",
-      ];
+      ].map((e) => e..workspace = testWorkspace).toList();
       final carCollection = isar.collection<CarModel>();
 
       // call
@@ -218,8 +224,9 @@ void main() {
 
       final verifySaveChanges = verify(store.storeChanges(captureAny));
       expect(verifySaveChanges.callCount, 1);
-      final capturedOperations = verifySaveChanges.captured.single;
-      expect(capturedOperations, isA<List<NewOperationChange>>());
+      expect(verifySaveChanges.captured.single, isA<List<StorableChange>>());
+      final capturedOperations =
+          verifySaveChanges.captured.single as List<StorableChange>;
 
       final operations = [
         NewOperationChange.edit(
@@ -227,15 +234,16 @@ void main() {
             sid: "sid_1",
             field: "make",
             value: "make 1 edited",
-            workspace: null),
+            workspace: testWorkspace),
         NewOperationChange.edit(
             collection: CarModelSchema.name,
             sid: "sid_1",
             field: "year",
             value: "year 1 edited",
-            workspace: null),
+            workspace: testWorkspace),
       ];
-      expect(capturedOperations, equals(operations));
+      expect(
+          capturedOperations.map((e) => e.change).toList(), equals(operations));
     });
   });
 }

@@ -6,17 +6,19 @@ import 'package:isar/isar.dart';
 import 'package:isar_crdt/operations/storable_change.dart';
 import 'store.dart';
 import '../isar_crdt.dart';
-import '../utils/sid.dart';
 
 import '../utils/hlc.dart';
 
 class IsarMasterCrdtStore<T extends CrdtBaseModel> extends CrdtStore {
   final IsarCollection<T> crdtCollection;
+  @override
+  final String nodeId;
   final Future<T> Function() builder;
   final String Function() sidGenerator;
 
   IsarMasterCrdtStore(
     this.crdtCollection, {
+    required this.nodeId,
     required this.builder,
     required this.sidGenerator,
   });
@@ -25,7 +27,7 @@ class IsarMasterCrdtStore<T extends CrdtBaseModel> extends CrdtStore {
   Future<Hlc> canonicalTime() async {
     final entry =
         await crdtCollection.filter().hlcIsNotEmpty().sortByHlc().findFirst();
-    if (entry == null) return Hlc.zero(SidUtils.random());
+    if (entry == null) return Hlc.zero(nodeId);
     return Hlc.parse(entry.hlc);
   }
 
@@ -33,7 +35,7 @@ class IsarMasterCrdtStore<T extends CrdtBaseModel> extends CrdtStore {
   Hlc canonicalTimeSync() {
     final entry =
         crdtCollection.filter().hlcIsNotEmpty().sortByHlc().findFirstSync();
-    if (entry == null) return Hlc.zero(SidUtils.random());
+    if (entry == null) return Hlc.zero(nodeId);
     return Hlc.parse(entry.hlc);
   }
 

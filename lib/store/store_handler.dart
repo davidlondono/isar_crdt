@@ -22,8 +22,6 @@ class IsarCrdtStoreHandler {
             StorableChange(change: change, hlc: hlc, modified: canonical))
         .toList();
 
-    // TODO filter out changes that are already in the database
-
     await store.storeChanges(newChanges);
   }
 }

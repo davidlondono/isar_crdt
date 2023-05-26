@@ -1,5 +1,5 @@
 import 'package:isar/isar.dart';
-import 'package:isar_crdt/models/crdt_base_object.dart';
+import 'package:isar_crdt/isar_crdt.dart';
 
 part 'models.g.dart';
 
@@ -8,6 +8,7 @@ class CarModel extends CrdtBaseObject {
   Id id = Isar.autoIncrement;
   late String make;
   late String year;
+  late String workspace;
 
   @override
   Map<String, dynamic> toJson() {
@@ -16,6 +17,7 @@ class CarModel extends CrdtBaseObject {
       "sid": sid,
       "make": make,
       "year": year,
+      "workspace": workspace,
     };
   }
 
@@ -25,3 +27,6 @@ class CarModel extends CrdtBaseObject {
       ..year = "year $number";
   }
 }
+
+@collection
+class CrdtModel extends CrdtBaseModel {}

@@ -34,6 +34,8 @@ void main() {
   final writer = MockCrdtWriter();
   final isar = MockIsar();
   late IsarCrdt crdt;
+
+  final String nodeId = 'test-nodeid';
   setUpAll(() async {
     // await Isar.initializeIsarCore(download: true);
     crdt = IsarCrdt(store: store, writer: writer);
@@ -41,6 +43,7 @@ void main() {
   setUp(() {
     reset(store);
     reset(writer);
+    when(store.nodeId).thenReturn(nodeId);
     when(writer.writeTxn(any)).thenAnswer(
       (realInvocation) {
         final ee = realInvocation.positionalArguments[0] as Function();
@@ -70,18 +73,15 @@ void main() {
       expect(changes, [operationMock]);
     });
     test('changes onlyModifiedHere', () async {
-      final canonicalTime = Hlc.now('canonicalTime');
-      when(store.canonicalTime()).thenAnswer((_) async => canonicalTime);
-
       final changes = await crdt.getChanges(onlyModifiedHere: true);
 
+      verifyNever(store.canonicalTime());
       expect(
           verify(store.queryChanges(
-                  hlcNode:
-                      captureThat(same(canonicalTime.nodeId), named: "hlcNode"),
+                  hlcNode: captureThat(same(nodeId), named: "hlcNode"),
                   hlcSince: null))
               .captured,
-          [canonicalTime.nodeId]);
+          [nodeId]);
       expect(changes, [operationMock]);
     });
   });

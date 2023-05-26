@@ -1,7 +1,5 @@
 // ignore_for_file: invalid_use_of_protected_member
 
-import 'dart:convert';
-
 import 'package:isar/isar.dart';
 import 'package:isar_crdt/models/models.dart';
 import 'package:isar_crdt/operations/operations.dart';
@@ -39,7 +37,7 @@ abstract class CrdtBaseModel {
     field = sc.change.field;
     rowId = sc.change.sid;
     operation = sc.change.operation.name;
-    value = jsonEncode(sc.change.value);
+    value = sc.change.value.toString();
     hlc = sc.hlc.toString();
     modified = sc.modified.toString();
     workspace = sc.change.workspace;
