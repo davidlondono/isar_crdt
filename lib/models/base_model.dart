@@ -72,6 +72,12 @@ extension CrdtBaseModelQueryFilter<T extends CrdtBaseModel>
     });
   }
 
+    QueryBuilder<T, T, QAfterSortBy> sortByModified() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy('modified', Sort.asc);
+    });
+  }
+
   QueryBuilder<T, T, QAfterFilterCondition> hlcContains(String value,
       {bool caseSensitive = true}) {
     return QueryBuilder.apply(this, (query) {
@@ -93,6 +99,34 @@ extension CrdtBaseModelQueryFilter<T extends CrdtBaseModel>
         include: include,
         property: r'hlc',
         value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+  QueryBuilder<T, T, QAfterFilterCondition> modifiedGreaterThan(
+    String value, {
+    bool include = false,
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.greaterThan(
+        include: include,
+        property: r'modified',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+
+  QueryBuilder<T, T, QAfterFilterCondition> operationEqualTo(
+    CrdtOperations value, {
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.equalTo(
+        property: r'operation',
+        value: value.value,
         caseSensitive: caseSensitive,
       ));
     });

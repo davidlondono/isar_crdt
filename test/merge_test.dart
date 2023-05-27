@@ -15,6 +15,7 @@ void main() {
   late IsarCrdt crdt;
 
   final String nodeId = 'test-nodeid';
+  final String remoteNodeId = 'test-nodeid';
   final String workspace = 'test-workspace';
   setUpAll(() async {
     // Call the registerChanges() method
@@ -51,7 +52,7 @@ void main() {
               sid: 'car-sid-1',
               value: jsonEncode(jsonCar),
               workspace: workspace),
-          hlc: Hlc.now(nodeId),
+          hlc: Hlc.now(remoteNodeId),
         )
       ]);
       final cars = await isar.carModels.where().findAll();
@@ -78,7 +79,7 @@ void main() {
               sid: 'car-sid-1',
               value: jsonEncode(jsonCar),
               workspace: workspace),
-          hlc: Hlc.now(nodeId),
+          hlc: Hlc.now(remoteNodeId),
         ),
         MergableChange(
           change: NewOperationChange.insert(
@@ -86,7 +87,7 @@ void main() {
               sid: 'car-sid-1',
               value: jsonEncode(jsonCar2),
               workspace: workspace),
-          hlc: Hlc.now(nodeId),
+          hlc: Hlc.now(remoteNodeId),
         ),
       ]);
       final cars = await isar.carModels.where().findAll();
@@ -106,6 +107,7 @@ void main() {
         "make": "Hunday",
         "year": "2022",
       };
+
       await crdt.merge([
         MergableChange(
           change: NewOperationChange.insert(
@@ -113,7 +115,7 @@ void main() {
               sid: 'car-sid-1',
               value: jsonEncode(jsonCar),
               workspace: workspace),
-          hlc: Hlc.now(nodeId),
+          hlc: Hlc.zero(remoteNodeId),
         ),
         MergableChange(
           change: NewOperationChange.insert(
@@ -121,7 +123,7 @@ void main() {
               sid: 'car-sid-2',
               value: jsonEncode(jsonCar2),
               workspace: workspace),
-          hlc: Hlc.now(nodeId),
+          hlc: Hlc.now(remoteNodeId),
         ),
       ]);
       final cars = await isar.carModels.where().findAll();
@@ -140,12 +142,12 @@ void main() {
   });
 
   group('update operation', () {
-    test('should insert multiple with differnet sid', () async {
+    test('should update multiple with separated merge', () async {
       const jsonCar = {
         "make": "Toyota",
         "year": "2020",
       };
-      final initialTime = Hlc.now(nodeId);
+      final initialTime = Hlc.now(remoteNodeId);
       await crdt.merge([
         MergableChange(
           change: NewOperationChange.insert(
@@ -153,7 +155,7 @@ void main() {
               sid: 'car-sid-1',
               value: jsonEncode(jsonCar),
               workspace: workspace),
-          hlc: Hlc.send(initialTime),
+          hlc: initialTime.increment(),
         ),
         MergableChange(
           change: NewOperationChange.edit(
@@ -162,7 +164,7 @@ void main() {
               field: 'make',
               value: jsonEncode("Hunday"),
               workspace: workspace),
-          hlc: Hlc.send(initialTime),
+          hlc: initialTime.increment(),
         ),
         MergableChange(
           change: NewOperationChange.edit(
@@ -171,7 +173,7 @@ void main() {
               field: 'year',
               value: jsonEncode("2022"),
               workspace: workspace),
-          hlc: Hlc.send(initialTime),
+          hlc: initialTime.increment(),
         ),
       ]);
       final cars = await isar.carModels.where().findAll();
@@ -179,6 +181,102 @@ void main() {
 
       expect(cars[0].make, 'Hunday');
       expect(cars[0].year, '2022');
+      expect(cars[0].sid, 'car-sid-1');
+      expect(cars[0].workspace, workspace);
+    });
+
+    test('should update multiple with separated merge', () async {
+      const jsonCar = {
+        "make": "Toyota",
+        "year": "2020",
+      };
+      final initialTime = Hlc.now(remoteNodeId);
+      await crdt.merge([
+        MergableChange(
+          change: NewOperationChange.insert(
+              collection: 'CarModel',
+              sid: 'car-sid-1',
+              value: jsonEncode(jsonCar),
+              workspace: workspace),
+          hlc: initialTime.increment(),
+        ),
+      ]);
+      await crdt.merge([
+        MergableChange(
+          change: NewOperationChange.edit(
+              collection: 'CarModel',
+              sid: 'car-sid-1',
+              field: 'make',
+              value: jsonEncode("Hunday"),
+              workspace: workspace),
+          hlc: initialTime.increment(),
+        ),
+      ]);
+      await crdt.merge([
+        MergableChange(
+          change: NewOperationChange.edit(
+              collection: 'CarModel',
+              sid: 'car-sid-1',
+              field: 'year',
+              value: jsonEncode("2022"),
+              workspace: workspace),
+          hlc: initialTime.increment(),
+        ),
+      ]);
+      final cars = await isar.carModels.where().findAll();
+      expect(cars.length, 1);
+
+      expect(cars[0].make, 'Hunday');
+      expect(cars[0].year, '2022');
+      expect(cars[0].sid, 'car-sid-1');
+      expect(cars[0].workspace, workspace);
+    });
+
+    test('should update only correct ones', () async {
+      const jsonCar = {
+        "make": "Toyota",
+        "year": "2020",
+      };
+      final initialTime = Hlc.now(remoteNodeId);
+      final time1 = initialTime.increment();
+      final time2 = time1.increment();
+      final time3 = time2.increment();
+      await crdt.merge([
+        MergableChange(
+          change: NewOperationChange.insert(
+              collection: 'CarModel',
+              sid: 'car-sid-1',
+              value: jsonEncode(jsonCar),
+              workspace: workspace),
+          hlc: initialTime,
+        ),
+      ]);
+      await crdt.merge([
+        MergableChange(
+          change: NewOperationChange.edit(
+              collection: 'CarModel',
+              sid: 'car-sid-1',
+              field: 'make',
+              value: jsonEncode("Hunday"),
+              workspace: workspace),
+          hlc: time3,
+        ),
+      ]);
+      await crdt.merge([
+        MergableChange(
+          change: NewOperationChange.edit(
+              collection: 'CarModel',
+              sid: 'car-sid-1',
+              field: 'make',
+              value: jsonEncode("Fake"),
+              workspace: workspace),
+          hlc: time2,
+        ),
+      ]);
+      final cars = await isar.carModels.where().findAll();
+      expect(cars.length, 1);
+
+      expect(cars[0].make, 'Hunday');
       expect(cars[0].sid, 'car-sid-1');
       expect(cars[0].workspace, workspace);
     });

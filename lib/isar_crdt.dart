@@ -75,11 +75,10 @@ class IsarCrdt {
     return store.watchChanges(hlcNode: hlcNode, hlcSince: modifiedSince);
   }
 
-  Future<void> _updateTables({Hlc? since}) async {
-    final changes = await getChanges(modifiedSince: since);
+  Future<void> _updateTables(List<StorableChange> changes) async {
     if (changes.isEmpty) return;
-
-    await writer?.upgradeChanges(changes);
+    final filteredChanges = await store.filterStoredChanges(changes);
+    await writer?.upgradeChanges(filteredChanges);
   }
 
   Future<void> clearRebuild() async {
@@ -97,22 +96,22 @@ class IsarCrdt {
 
   Future<Hlc> merge(List<MergableChange> changeset) async {
     if (writer == null) throw NoIsarConnected();
-    final initialTime = await _canonicalTime();
-    final Hlc canonicalTime = changeset.fold<Hlc>(initialTime, (ct, map) {
+    var initialTime = await _canonicalTime();
+    final uniqueTimes = changeset.map((e) => e.hlc).toSet().toList();
+
+    final canonicalTime = uniqueTimes.fold(initialTime, (canonicalTime, remote) {
       try {
-        return Hlc.recv(ct, map.hlc);
-      } catch (e) {
-        print(e);
-        return ct;
+        return canonicalTime.merge(remote);
+      } on DuplicateNodeException {
+        return remote;
       }
     });
-
     final storableChanges = changeset
         .map((map) => StorableChange(
             change: map.change, hlc: map.hlc, modified: canonicalTime))
         .toList();
     await writer!.writeTxn(() => store.storeChanges(storableChanges));
-    await _updateTables(since: canonicalTime);
+    await _updateTables(storableChanges);
     return canonicalTime;
   }
 }

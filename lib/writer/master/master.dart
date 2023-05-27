@@ -245,9 +245,9 @@ class IsarMasterCrdtWriter extends CrdtWriter {
               "sid": e.key,
             };
 
-        for (final element in e.value.sortedBy((element) => element.hlc)) {
-          json[element.change.field!] = element.change.value;
-        }
+        final entries = e.value.sortedBy((element) => element.hlc).map((element) => MapEntry(element.change.field!, jsonDecode(element.change.value.toString())));
+        final mapEntries = Map.fromEntries(entries);
+        json.addAll(mapEntries);
         return json;
       }).toList();
 
@@ -318,6 +318,15 @@ class IsarMasterCrdtWriter extends CrdtWriter {
   @override
   Future<void> clear() {
     return isar.clear();
+  }
+  
+  @override
+  Future<List<StorableChange>> filterStoredChanges(List<StorableChange> records) async {
+    
+    
+
+    // TODO: implement filterStoredChanges
+    return records;
   }
 }
 
