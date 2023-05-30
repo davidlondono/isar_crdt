@@ -32,7 +32,7 @@ class NewOperationChange {
   final String collection;
   final String sid;
   final String? field;
-  final Object? value;
+  final String? value;
   final CrdtOperations operation;
   final String? workspace;
 

@@ -100,18 +100,15 @@ class IsarCrdt {
     final uniqueTimes = changeset.map((e) => e.hlc).toSet().toList();
 
     final canonicalTime = uniqueTimes.fold(initialTime, (canonicalTime, remote) {
-      try {
+      
         return canonicalTime.merge(remote);
-      } on DuplicateNodeException {
-        return remote;
-      }
     });
     final storableChanges = changeset
         .map((map) => StorableChange(
             change: map.change, hlc: map.hlc, modified: canonicalTime))
         .toList();
-    await writer!.writeTxn(() => store.storeChanges(storableChanges));
-    await _updateTables(storableChanges);
+    final storedChanges = await writer!.writeTxn(() => store.storeChanges(storableChanges));
+    await _updateTables(storedChanges);
     return canonicalTime;
   }
 }

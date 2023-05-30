@@ -89,7 +89,7 @@ void main() {
     test('changes onlyModifiedHere', () async {
       when(writer.upgradeChanges(any)).thenAnswer((_) async => []);
       when(isar.clear()).thenAnswer((realInvocation) async {});
-      when(store.storeChanges(any)).thenAnswer((realInvocation) async {});
+      when(store.storeChanges(any)).thenAnswer((realInvocation) async => []);
 
       await crdt.clearRebuild();
 

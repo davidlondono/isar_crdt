@@ -91,6 +91,8 @@ class Hlc implements Comparable<Hlc> {
     return Hlc.fromLogicalTime(remote.logicalTime, nodeId);
   }
 
+  Hlc add(Duration duration) => Hlc(millis + duration.inMilliseconds, counter, nodeId);
+
   String toJson() => toString();
 
   @override

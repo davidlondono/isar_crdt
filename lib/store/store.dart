@@ -19,7 +19,7 @@ abstract class CrdtStore {
 
   Future<List<StorableChange>> filterStoredChanges(List<StorableChange> records);
   
-  Future<void> storeChanges(List<StorableChange> changes);
+  Future<List<StorableChange>> storeChanges(List<StorableChange> changes);
   String generateRandomSid();
 
   String get nodeId;

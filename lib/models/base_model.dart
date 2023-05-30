@@ -4,6 +4,7 @@ import 'package:isar/isar.dart';
 import 'package:isar_crdt/models/models.dart';
 import 'package:isar_crdt/operations/operations.dart';
 import 'package:isar_crdt/operations/storable_change.dart';
+import 'package:isar_crdt/utils/hlc.dart';
 
 abstract class CrdtBaseModel {
   CrdtBaseModel();
@@ -118,6 +119,90 @@ extension CrdtBaseModelQueryFilter<T extends CrdtBaseModel>
     });
   }
 
+
+
+  QueryBuilder<T, T, QAfterFilterCondition> hlcEqualTo(
+    Hlc value, {
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.equalTo(
+        property: r'hlc',
+        value: value.toString(),
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+
+
+
+QueryBuilder<T, T, QAfterFilterCondition> collectionEqualTo(
+    String value, {
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.equalTo(
+        property: r'collection',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<T, T, QAfterFilterCondition> rowIdEqualTo(
+    String value, {
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.equalTo(
+        property: r'rowId',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<T, T, QAfterFilterCondition> fieldEqualTo(
+    String? value, {
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(value == null ? FilterCondition.isNull(
+        property: r'field',
+      ) : FilterCondition.equalTo(
+        property: r'field',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<T, T, QAfterFilterCondition> valueEqualTo(
+    String? value, {
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.equalTo(
+        property: r'value',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<T, T, QAfterFilterCondition> workspaceEqualTo(
+    String? value, {
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.equalTo(
+        property: r'workspace',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
 
   QueryBuilder<T, T, QAfterFilterCondition> operationEqualTo(
     CrdtOperations value, {
