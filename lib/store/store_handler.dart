@@ -15,8 +15,10 @@ class IsarCrdtStoreHandler {
     final hlc = canonical.increment();
 
     final newChanges = changes
-        .map((change) =>
-            StorableChange(change: change, hlc: hlc, modified: canonical),)
+        .map(
+          (change) =>
+              StorableChange(change: change, hlc: hlc, modified: canonical),
+        )
         .toList();
 
     await store.storeChanges(newChanges);

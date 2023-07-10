@@ -362,7 +362,8 @@ extension _CollectionsOperations<OC extends NewOperationChange>
       splitMatch((element) => element.change.operation == operation);
 
   ListMatch<StorableChange> splitByOperations(
-          List<CrdtOperations> operations,) =>
+    List<CrdtOperations> operations,
+  ) =>
       splitMatch(
         (element) => operations.contains(element.change.operation),
       );

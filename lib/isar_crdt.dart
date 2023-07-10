@@ -104,7 +104,9 @@ class IsarCrdt {
     final uniqueTimes = changeset.map((e) => e.hlc).toSet().toList();
 
     final canonicalTime = uniqueTimes.fold(
-        initialTime, (canonicalTime, remote) => canonicalTime.merge(remote),);
+      initialTime,
+      (canonicalTime, remote) => canonicalTime.merge(remote),
+    );
     final storableChanges = changeset
         .map(
           (map) => StorableChange(

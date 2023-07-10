@@ -14,15 +14,16 @@ class StorableChange {
 
   static StorableChange fromOperationChange<BM extends CrdtBaseModel>({
     required BM change,
-  }) => StorableChange(
-      change: change.toOperationChange(),
-      hlc: Hlc.parse(change.hlc),
-      modified: Hlc.parse(change.modified),
-    );
+  }) =>
+      StorableChange(
+        change: change.toOperationChange(),
+        hlc: Hlc.parse(change.hlc),
+        modified: Hlc.parse(change.modified),
+      );
 
   Map<String, dynamic> toJson() => {
-      ...change.toJson(),
-      'hlc': hlc.toString(),
-      'modified': modified.toString(),
-    };
+        ...change.toJson(),
+        'hlc': hlc.toString(),
+        'modified': modified.toString(),
+      };
 }

@@ -93,5 +93,4 @@ class NewOperationChange {
         'value': value,
         'operation': operation.name,
       };
-
 }
