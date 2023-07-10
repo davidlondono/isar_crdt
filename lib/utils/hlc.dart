@@ -1,5 +1,7 @@
 import 'dart:math';
 
+import 'package:meta/meta.dart';
+
 const _shift = 16;
 const _maxCounter = 0xFFFF;
 const _maxDrift = 60000; // 1 minute in ms
@@ -8,30 +10,28 @@ const _maxDrift = 60000; // 1 minute in ms
 /// This class trades time precision for a guaranteed monotonically increasing
 /// clock in distributed systems.
 /// Inspiration: https://cse.buffalo.edu/tech-reports/2014-04.pdf
+
+@immutable
 class Hlc implements Comparable<Hlc> {
-  final int millis;
-  final int counter;
-  final String nodeId;
-
-  int get logicalTime => (millis << _shift) + counter;
-
-  Hlc(int millis, this.counter, this.nodeId)
-      : assert(counter <= _maxCounter),
+  const Hlc(int millis, this.counter, this.nodeId)
+      : assert(counter <= _maxCounter, 'Counter overflow'),
         // Detect microseconds and convert to millis
         millis = millis < 0x0001000000000000 ? millis : millis ~/ 1000;
 
-  Hlc.zero(String nodeId) : this(0, 0, nodeId);
+  const Hlc.zero(String nodeId) : this(0, 0, nodeId);
 
   Hlc.fromDate(DateTime dateTime, String nodeId)
       : this(dateTime.millisecondsSinceEpoch, 0, nodeId);
 
   Hlc.now(String nodeId) : this.fromDate(DateTime.now(), nodeId);
 
-  Hlc.fromLogicalTime(logicalTime, String nodeId)
+  const Hlc.fromLogicalTime(logicalTime, String nodeId)
       : this(logicalTime >> _shift, logicalTime & _maxCounter, nodeId);
 
-  factory Hlc.parse(String timestamp,
-      [String Function(String value)? idDecoder]) {
+  factory Hlc.parse(
+    String timestamp, [
+    String Function(String value)? idDecoder,
+  ]) {
     final counterDash = timestamp.indexOf('-', timestamp.lastIndexOf(':'));
     final nodeIdDash = timestamp.indexOf('-', counterDash + 1);
     final millis = DateTime.parse(timestamp.substring(0, counterDash))
@@ -41,9 +41,17 @@ class Hlc implements Comparable<Hlc> {
     final nodeId = timestamp.substring(nodeIdDash + 1);
     return Hlc(millis, counter, idDecoder != null ? idDecoder(nodeId) : nodeId);
   }
+  final int millis;
+  final int counter;
+  final String nodeId;
+
+  int get logicalTime => (millis << _shift) + counter;
 
   Hlc apply({int? millis, int? counter, String? nodeId}) => Hlc(
-      millis ?? this.millis, counter ?? this.counter, nodeId ?? this.nodeId);
+        millis ?? this.millis,
+        counter ?? this.counter,
+        nodeId ?? this.nodeId,
+      );
 
   /// Increments the current timestamp for transmission to another system.
   /// The local wall time will be used if [wallMillis] isn't supplied.
@@ -76,6 +84,7 @@ class Hlc implements Comparable<Hlc> {
     wallMillis ??= DateTime.now().millisecondsSinceEpoch;
 
     // No need to do any more work if the remote logical time is lower
+    // ignore: avoid_returning_this
     if (logicalTime >= remote.logicalTime) return this;
 
     // Assert the node id
@@ -96,55 +105,55 @@ class Hlc implements Comparable<Hlc> {
   String toJson() => toString();
 
   @override
-  String toString() =>
-      '${DateTime.fromMillisecondsSinceEpoch(millis, isUtc: true).toIso8601String()}'
-      '-${counter.toRadixString(16).toUpperCase().padLeft(4, '0')}'
-      '-$nodeId';
+  String toString() {
+    final date = DateTime.fromMillisecondsSinceEpoch(millis, isUtc: true)
+        .toIso8601String();
+    final count = counter.toRadixString(16).toUpperCase().padLeft(4, '0');
+
+    return '$date-$count-$nodeId';
+  }
 
   @override
   int get hashCode => toString().hashCode;
 
   @override
-  bool operator ==(other) => other is Hlc && compareTo(other) == 0;
+  bool operator ==(Object other) => other is Hlc && compareTo(other) == 0;
 
-  bool operator <(other) => other is Hlc && compareTo(other) < 0;
+  bool operator <(Hlc other) => compareTo(other) < 0;
 
-  bool operator <=(other) => this < other || this == other;
+  bool operator <=(Hlc other) => this < other || this == other;
 
-  bool operator >(other) => other is Hlc && compareTo(other) > 0;
+  bool operator >(Hlc other) => compareTo(other) > 0;
 
-  bool operator >=(other) => this > other || this == other;
+  bool operator >=(Hlc other) => this > other || this == other;
 
   @override
   int compareTo(Hlc other) {
     final time = logicalTime.compareTo(other.logicalTime);
-    return time != 0 ? time : (nodeId).compareTo(other.nodeId);
+    return time != 0 ? time : nodeId.compareTo(other.nodeId);
   }
 }
 
 class ClockDriftException implements Exception {
-  final int drift;
-
   ClockDriftException(int millisTs, int millisWall)
       : drift = millisTs - millisWall;
+  final int drift;
 
   @override
   String toString() => 'Clock drift of $drift ms exceeds maximum ($_maxDrift)';
 }
 
 class OverflowException implements Exception {
-  final int counter;
-
   OverflowException(this.counter);
+  final int counter;
 
   @override
   String toString() => 'Timestamp counter overflow: $counter';
 }
 
 class DuplicateNodeException implements Exception {
-  final String nodeId;
-
   DuplicateNodeException(this.nodeId);
+  final String nodeId;
 
   @override
   String toString() => 'Duplicate node: $nodeId';

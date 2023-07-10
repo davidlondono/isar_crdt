@@ -3,43 +3,44 @@
 import 'dart:async';
 import 'dart:convert';
 
-import "package:collection/collection.dart";
+import 'package:collection/collection.dart';
 import 'package:isar/isar.dart';
 // ignore: implementation_imports
 import 'package:isar/src/common/isar_links_common.dart' show IsarLinksCommon;
-import 'package:isar_crdt/operations/storable_change.dart';
-import '../writer.dart';
+
 import '../../isar_crdt.dart';
+import '../../operations/storable_change.dart';
+import '../writer.dart';
 
 abstract class _Transaction {
-  final List<StorableChange> changes;
-  Future<void> run();
   _Transaction({
     required this.changes,
   });
+  final List<StorableChange> changes;
+  Future<void> run();
 }
 
 class _DeleteTransaction extends _Transaction {
-  final IsarCollection<dynamic> collection;
-  final List<String> sids;
   _DeleteTransaction({
     required this.collection,
     required this.sids,
     required super.changes,
   });
+  final IsarCollection<dynamic> collection;
+  final List<String> sids;
 
   @override
-  Future<void> run() => collection.deleteByIndex("sid", sids);
+  Future<void> run() => collection.deleteByIndex('sid', sids);
 }
 
 class _UpdateTransaction extends _Transaction {
-  final IsarCollection<dynamic> collection;
-  final List<Map<String, dynamic>> json;
   _UpdateTransaction({
     required this.collection,
     required this.json,
     required super.changes,
   });
+  final IsarCollection<dynamic> collection;
+  final List<Map<String, dynamic>> json;
 
   @override
   Future<void> run() async {
@@ -53,27 +54,26 @@ enum _SyncOperationType {
 }
 
 class _SyncOperation {
-  String sid;
-  String field;
-  _SyncOperationType type;
   _SyncOperation({
     required this.sid,
     required this.field,
     required this.type,
   });
+  String sid;
+  String field;
+  _SyncOperationType type;
 }
 
 class _SyncLinksTransaction extends _Transaction {
-  QueryBuilder<CrdtBaseObject, CrdtBaseObject, QAfterFilterCondition> query;
-  List<_SyncOperation> operations;
-
-  List<IsarLinks<dynamic>> linksToSave = <IsarLinks<dynamic>>[];
-
   _SyncLinksTransaction({
     required this.query,
     required this.operations,
     required super.changes,
   });
+  QueryBuilder<CrdtBaseObject, CrdtBaseObject, QAfterFilterCondition> query;
+  List<_SyncOperation> operations;
+
+  List<IsarLinks<dynamic>> linksToSave = <IsarLinks<dynamic>>[];
 
   Future<void> prepare() async {
     final object = await query.findFirst();
@@ -90,7 +90,7 @@ class _SyncLinksTransaction extends _Transaction {
       final operations = mapOperation.value;
       final links = linksMap[field];
       if (links == null) {
-        throw Exception("Links not found");
+        throw Exception('Links not found');
       }
       final sids = operations.map((e) => jsonDecode(e.sid) as String).toList();
       if (links is IsarLinksCommon<CrdtBaseObject>) {
@@ -101,7 +101,7 @@ class _SyncLinksTransaction extends _Transaction {
           final sid = jsonDecode(operation.sid) as String;
           final obj = objects.firstWhereOrNull((element) => element.sid == sid);
           if (obj == null) {
-            throw Exception("Object not found");
+            throw Exception('Object not found');
           }
           if (operation.type == _SyncOperationType.add) {
             links.add(obj);
@@ -110,7 +110,7 @@ class _SyncLinksTransaction extends _Transaction {
           }
         }
       } else {
-        throw Exception("Unsupported links type");
+        throw Exception('Unsupported links type');
       }
     }
 
@@ -129,12 +129,12 @@ class _SyncLinksTransaction extends _Transaction {
 }
 
 class IsarMasterCrdtWriter extends CrdtWriter {
+  const IsarMasterCrdtWriter(this.isar);
   final Isar isar;
 
-  const IsarMasterCrdtWriter(this.isar);
-
   List<_DeleteTransaction> _mapDeleteTransactions(
-      List<StorableChange> deleteChanges) {
+    List<StorableChange> deleteChanges,
+  ) {
     final deleteGrouped =
         deleteChanges.groupListsBy((element) => element.change.collection);
 
@@ -142,13 +142,17 @@ class IsarMasterCrdtWriter extends CrdtWriter {
       final sids = changeMap.value.map((e) => e.change.sid).toList();
       final isarCollection = changeMap.value.first.getCollection(isar);
       return _DeleteTransaction(
-          collection: isarCollection!, sids: sids, changes: changeMap.value);
+        collection: isarCollection!,
+        sids: sids,
+        changes: changeMap.value,
+      );
     }).toList();
   }
 
   Future<List<_UpdateTransaction>> _mapInsertTransactions(
-      List<StorableChange> insertChanges,
-      List<StorableChange> updatesInsertedChanges) async {
+    List<StorableChange> insertChanges,
+    List<StorableChange> updatesInsertedChanges,
+  ) async {
     final transactions = List<_UpdateTransaction>.empty(growable: true);
     for (final element in insertChanges
         .groupListsBy((element) => element.change.collection)
@@ -160,33 +164,44 @@ class IsarMasterCrdtWriter extends CrdtWriter {
 
       final jsons = element.value.map((e) {
         final json =
-            objects.firstWhereOrNull((js) => js["sid"] == e.change.sid) ??
+            objects.firstWhereOrNull((js) => js['sid'] == e.change.sid) ??
                 <String, dynamic>{
-                  "sid": e.change.sid,
-                  "workspace": e.change.workspace,
+                  'sid': e.change.sid,
+                  'workspace': e.change.workspace,
                 };
 
         if (e.change.value == null) {
           throw Exception(
-              "Value is null for $element on collection $collection and sid ${e.change.sid}");
+            // ignore: lines_longer_than_80_chars
+            'Value is null for $element on collection $collection and sid ${e.change.sid}',
+          );
         }
         json.addAll(jsonDecode(e.change.value.toString()));
         final entries = updatesInsertedChanges
-            .where((element) =>
-                element.change.sid == e.change.sid &&
-                element.change.collection == e.change.collection)
-            .map((element) {
-          return MapEntry(element.change.field!,
-              jsonDecode(element.change.value.toString()));
-        });
+            .where(
+              (element) =>
+                  element.change.sid == e.change.sid &&
+                  element.change.collection == e.change.collection,
+            )
+            .map(
+              (element) => MapEntry(
+                element.change.field!,
+                jsonDecode(element.change.value.toString()),
+              ),
+            );
 
         final mapEntries = Map.fromEntries(entries);
         json.addAll(mapEntries);
         return json;
       }).toList();
 
-      transactions.add(_UpdateTransaction(
-          collection: isarCollection, json: jsons, changes: element.value));
+      transactions.add(
+        _UpdateTransaction(
+          collection: isarCollection,
+          json: jsons,
+          changes: element.value,
+        ),
+      );
     }
     return transactions;
   }
@@ -204,23 +219,29 @@ class IsarMasterCrdtWriter extends CrdtWriter {
 
     transactions.addAll(deleteTransactions);
     // filter not deleted elements
-    final recordsNotDeletedSplit = deletedSplit.unmatched.splitMatch((record) {
-      return deletedSplit.matched.any((deletedRecord) =>
-          deletedRecord.change.collection == record.change.collection &&
-          deletedRecord.change.sid == record.change.sid);
-    });
+    final recordsNotDeletedSplit = deletedSplit.unmatched.splitMatch(
+      (record) => deletedSplit.matched.any(
+        (deletedRecord) =>
+            deletedRecord.change.collection == record.change.collection &&
+            deletedRecord.change.sid == record.change.sid,
+      ),
+    );
 
     /// Insert records transaction
     final insertSplit = recordsNotDeletedSplit.unmatched
         .splitByOperation(CrdtOperations.insert);
 
-    final updatedInsertSplit = insertSplit.unmatched.splitMatch((record) =>
-        record.change.operation == CrdtOperations.update &&
-        insertSplit.matched
-            .any((inserted) => inserted.change.sid == record.change.sid));
+    final updatedInsertSplit = insertSplit.unmatched.splitMatch(
+      (record) =>
+          record.change.operation == CrdtOperations.update &&
+          insertSplit.matched
+              .any((inserted) => inserted.change.sid == record.change.sid),
+    );
 
     final insertTransactions = await _mapInsertTransactions(
-        insertSplit.matched, updatedInsertSplit.matched);
+      insertSplit.matched,
+      updatedInsertSplit.matched,
+    );
 
     transactions.addAll(insertTransactions);
 
@@ -240,28 +261,38 @@ class IsarMasterCrdtWriter extends CrdtWriter {
           .groupListsBy((element) => element.change.sid)
           .entries
           .map((e) {
-        final json = objects.firstWhereOrNull((js) => js["sid"] == e.key) ??
+        final json = objects.firstWhereOrNull((js) => js['sid'] == e.key) ??
             <String, dynamic>{
-              "sid": e.key,
+              'sid': e.key,
             };
 
         final entries = e.value.sortedBy((element) => element.hlc).map(
-            (element) => MapEntry(element.change.field!,
-                jsonDecode(element.change.value.toString())));
+              (element) => MapEntry(
+                element.change.field!,
+                jsonDecode(element.change.value.toString()),
+              ),
+            );
         final mapEntries = Map.fromEntries(entries);
         json.addAll(mapEntries);
         return json;
       }).toList();
 
-      transactions.add(_UpdateTransaction(
-          collection: isarCollection, json: jsons, changes: entry.value));
+      transactions.add(
+        _UpdateTransaction(
+          collection: isarCollection,
+          json: jsons,
+          changes: entry.value,
+        ),
+      );
     }
     final linkedSplit = updatesSplit.unmatched
         .splitByOperations([CrdtOperations.addLink, CrdtOperations.removeLink]);
 
-    final linkedCleanSplit = linkedSplit.matched.splitMatch((linkChange) =>
-        !deletedSplit.matched.any((deletedChange) =>
-            linkChange.change.value == deletedChange.change.sid));
+    final linkedCleanSplit = linkedSplit.matched.splitMatch(
+      (linkChange) => !deletedSplit.matched.any(
+        (deletedChange) => linkChange.change.value == deletedChange.change.sid,
+      ),
+    );
 
     final linksByColection = linkedCleanSplit.matched
         .groupListsBy((element) => element.change.collection)
@@ -279,60 +310,62 @@ class IsarMasterCrdtWriter extends CrdtWriter {
         final sid = linkedFieldMap.key;
         final query = isarCollection!._queryBySids([sid]);
 
-        final linkedClean = linkedFieldMap.value.where((change) {
-          return !linkedFieldMap.value.where((element) {
-            return change.change.sid == element.change.sid &&
-                change.change.field == element.change.field &&
-                change.change.value == element.change.value &&
-                element.change.operation != change.change.operation;
-          }).any((element) {
-            return element.hlc > change.hlc;
-          });
-        }).toList();
-        transactions.add(_SyncLinksTransaction(operations: [
-          for (final record in linkedClean)
-            _SyncOperation(
-                type: record.change.operation == CrdtOperations.addLink
-                    ? _SyncOperationType.add
-                    : _SyncOperationType.remove,
-                field: record.change.field!,
-                sid: record.change.value as String)
-        ], query: query, changes: linkedClean));
+        final linkedClean = linkedFieldMap.value
+            .where(
+              (change) => !linkedFieldMap.value
+                  .where(
+                    (element) =>
+                        change.change.sid == element.change.sid &&
+                        change.change.field == element.change.field &&
+                        change.change.value == element.change.value &&
+                        element.change.operation != change.change.operation,
+                  )
+                  .any((element) => element.hlc > change.hlc),
+            )
+            .toList();
+        transactions.add(
+          _SyncLinksTransaction(
+            operations: [
+              for (final record in linkedClean)
+                _SyncOperation(
+                  type: record.change.operation == CrdtOperations.addLink
+                      ? _SyncOperationType.add
+                      : _SyncOperationType.remove,
+                  field: record.change.field!,
+                  sid: record.change.value!,
+                )
+            ],
+            query: query,
+            changes: linkedClean,
+          ),
+        );
       }
     }
     await isar.writeTxn(() async {
-      try {
-        for (final transaction in transactions) {
-          await transaction.run();
-        }
-      } catch (e, stackTrace) {
-        print(stackTrace);
-        print(e);
+      for (final transaction in transactions) {
+        await transaction.run();
       }
     });
   }
 
   @override
-  Future<T> writeTxn<T>(Future<T> Function() callback, {bool silent = false}) {
-    return isar.writeTxn(callback, silent: silent);
-  }
+  Future<T> writeTxn<T>(Future<T> Function() callback, {bool silent = false}) =>
+      isar.writeTxn(callback, silent: silent);
 
   @override
-  Future<void> clear() {
-    return isar.clear();
-  }
+  Future<void> clear() => isar.clear();
 }
 
 extension _CollectionsOperations<OC extends NewOperationChange>
     on Iterable<StorableChange> {
-  ListMatch<StorableChange> splitByOperation(CrdtOperations operation) {
-    return splitMatch((element) => element.change.operation == operation);
-  }
+  ListMatch<StorableChange> splitByOperation(CrdtOperations operation) =>
+      splitMatch((element) => element.change.operation == operation);
 
-  ListMatch<StorableChange> splitByOperations(List<CrdtOperations> operations) {
-    return splitMatch(
-        (element) => operations.contains(element.change.operation));
-  }
+  ListMatch<StorableChange> splitByOperations(
+          List<CrdtOperations> operations,) =>
+      splitMatch(
+        (element) => operations.contains(element.change.operation),
+      );
 }
 
 extension _IsarCollectionSid<T> on IsarCollection<T> {
@@ -344,10 +377,13 @@ extension _IsarCollectionSid<T> on IsarCollection<T> {
           value: sid,
         )
     ]);
-    return QueryBuilder.apply<T, T, QAfterFilterCondition>(where(), (query) {
-      return query.copyWith(
-          filterGroupType: FilterGroupType.or, filter: filterSids);
-    });
+    return QueryBuilder.apply<T, T, QAfterFilterCondition>(
+      where(),
+      (query) => query.copyWith(
+        filterGroupType: FilterGroupType.or,
+        filter: filterSids,
+      ),
+    );
   }
 
   Future<List<Map<String, dynamic>>> _exportJsonFromSids(List<String> sids) =>
@@ -355,7 +391,6 @@ extension _IsarCollectionSid<T> on IsarCollection<T> {
 }
 
 extension EE<OC extends NewOperationChange> on StorableChange {
-  IsarCollection<dynamic>? getCollection(Isar isar) {
-    return isar.getCollectionByNameInternal(change.collection);
-  }
+  IsarCollection<dynamic>? getCollection(Isar isar) =>
+      isar.getCollectionByNameInternal(change.collection);
 }

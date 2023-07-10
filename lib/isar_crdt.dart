@@ -3,49 +3,49 @@
 import 'dart:async';
 
 import 'package:isar/isar.dart';
-import 'package:isar_crdt/operations/merge_change.dart';
-import 'package:isar_crdt/operations/storable_change.dart';
+
 import 'models/base_model.dart';
+import 'operations/merge_change.dart';
+import 'operations/storable_change.dart';
 import 'store/master.dart';
-import 'writer/writer.dart';
 import 'store/store.dart';
 import 'store/store_handler.dart';
-
-import 'writer/master/master.dart';
 import 'utils/hlc.dart';
+import 'writer/master/master.dart';
+import 'writer/writer.dart';
 
-export 'models/models.dart';
-export 'store/master.dart';
 export 'isar_extensions.dart';
+export 'models/models.dart';
 export 'operations/merge_change.dart';
 export 'operations/operations.dart';
+export 'store/master.dart';
 
 class NoIsarConnected implements Exception {
   NoIsarConnected();
 }
 
 class IsarCrdt {
-  final CrdtStore store;
-  CrdtWriter? writer;
   IsarCrdt({
     required this.store,
     this.writer,
   });
+  final CrdtStore store;
+  CrdtWriter? writer;
 
   static IsarCrdt master<T extends CrdtBaseModel>({
     required IsarCollection<T> crdtCollection,
     required Future<T> Function() builder,
     required String Function() sidGenerator,
     required String nodeId,
-  }) {
-    return IsarCrdt(
+  }) =>
+      IsarCrdt(
         store: IsarMasterCrdtStore(
-      crdtCollection,
-      builder: builder,
-      sidGenerator: sidGenerator,
-      nodeId: nodeId,
-    ));
-  }
+          crdtCollection,
+          builder: builder,
+          sidGenerator: sidGenerator,
+          nodeId: nodeId,
+        ),
+      );
 
   IsarCrdtStoreHandler _handler(Isar isar) {
     writer ??= IsarMasterCrdtWriter(isar);
@@ -55,8 +55,10 @@ class IsarCrdt {
   Future<Hlc> _canonicalTime() => store.canonicalTime();
   String nodeIdSync() => store.nodeId;
 
-  Future<List<StorableChange>> getChanges(
-      {Hlc? modifiedSince, bool onlyModifiedHere = false}) async {
+  Future<List<StorableChange>> getChanges({
+    Hlc? modifiedSince,
+    bool onlyModifiedHere = false,
+  }) async {
     String? hlcNode;
     if (onlyModifiedHere) {
       hlcNode = store.nodeId;
@@ -65,8 +67,10 @@ class IsarCrdt {
     return store.queryChanges(hlcNode: hlcNode, hlcSince: modifiedSince);
   }
 
-  Stream<List<StorableChange>> watchChanges(
-      {Hlc? modifiedSince, bool onlyModifiedHere = false}) {
+  Stream<List<StorableChange>> watchChanges({
+    Hlc? modifiedSince,
+    bool onlyModifiedHere = false,
+  }) {
     String? hlcNode;
     if (onlyModifiedHere) {
       hlcNode = store.nodeId;
@@ -96,16 +100,19 @@ class IsarCrdt {
 
   Future<Hlc> merge(List<MergableChange> changeset) async {
     if (writer == null) throw NoIsarConnected();
-    var initialTime = await _canonicalTime();
+    final initialTime = await _canonicalTime();
     final uniqueTimes = changeset.map((e) => e.hlc).toSet().toList();
 
-    final canonicalTime =
-        uniqueTimes.fold(initialTime, (canonicalTime, remote) {
-      return canonicalTime.merge(remote);
-    });
+    final canonicalTime = uniqueTimes.fold(
+        initialTime, (canonicalTime, remote) => canonicalTime.merge(remote),);
     final storableChanges = changeset
-        .map((map) => StorableChange(
-            change: map.change, hlc: map.hlc, modified: canonicalTime))
+        .map(
+          (map) => StorableChange(
+            change: map.change,
+            hlc: map.hlc,
+            modified: canonicalTime,
+          ),
+        )
         .toList();
     final storedChanges =
         await writer!.writeTxn(() => store.storeChanges(storableChanges));
@@ -121,7 +128,5 @@ extension IsarCrdtExtension on Isar {
     _isarProcessors[name] = crdt._handler(this);
   }
 
-  IsarCrdtStoreHandler? get crdt {
-    return _isarProcessors[name];
-  }
+  IsarCrdtStoreHandler? get crdt => _isarProcessors[name];
 }

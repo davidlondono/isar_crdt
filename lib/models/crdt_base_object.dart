@@ -2,7 +2,7 @@ import 'package:isar/isar.dart';
 
 abstract class CrdtBaseObject {
   @Index(replace: true, unique: true)
-  String sid = "";
+  String sid = '';
   Map<String, dynamic> toJson();
 
   IsarLink<dynamic>? getLink(String link) {

@@ -12,28 +12,34 @@ extension IsarLinksImplChanges<T extends CrdtBaseObject> on IsarLinksCommon<T> {
     final obj = await sourceCollection.get(sourceId);
     final sid = targetCollection.getSid(obj);
     final entriesAdd = addedObjects
-        .map((obj) => NewOperationChange(
+        .map(
+          (obj) => NewOperationChange(
             collection: sourceCollection.name,
             field: linkName,
             sid: sid,
             workspace: obj.getWorkspace(),
             operation: CrdtOperations.addLink,
-            value: jsonEncode(targetCollection.getSid(obj))))
+            value: jsonEncode(targetCollection.getSid(obj)),
+          ),
+        )
         .toList();
 
     final entriesRemove = removedObjects
-        .map((obj) => NewOperationChange(
+        .map(
+          (obj) => NewOperationChange(
             collection: sourceCollection.name,
             field: linkName,
             sid: sid,
             workspace: obj.getWorkspace(),
             operation: CrdtOperations.removeLink,
-            value: jsonEncode(targetCollection.getSid(obj))))
+            value: jsonEncode(targetCollection.getSid(obj)),
+          ),
+        )
         .toList();
 
     await targetCollection
         ._saveNewOperationChange([...entriesAdd, ...entriesRemove]);
-    return await save();
+    return save();
   }
 }
 
@@ -49,16 +55,18 @@ extension IsarLinksChanges<T extends CrdtBaseObject> on IsarLinks<T> {
 }
 
 extension CollectionSchemaSid<T> on CollectionSchema<T> {
-  get sidName => 'sid';
+  String get sidName => 'sid';
 }
 
 extension IsarCollectionChanges<T extends CrdtBaseObject> on IsarCollection<T> {
-  String getSid(obj) => obj.sid;
+  String getSid(T obj) => obj.sid;
   Map<String, dynamic> toJson(T obj) =>
       jsonDecode(jsonEncode(obj)) as Map<String, dynamic>;
 
   Map<String, dynamic> difference(
-      Map<String, dynamic> older, Map<String, dynamic> newer) {
+    Map<String, dynamic> older,
+    Map<String, dynamic> newer,
+  ) {
     final diff = Map<String, dynamic>.from(newer);
     older.forEach((key, value) {
       if (newer[key] == value) {
@@ -69,33 +77,40 @@ extension IsarCollectionChanges<T extends CrdtBaseObject> on IsarCollection<T> {
   }
 
   Iterable<NewOperationChange> _getEditEntriesMap(
-          String id, Map<String, dynamic> json, String? workspace) =>
+    String id,
+    Map<String, dynamic> json,
+    String? workspace,
+  ) =>
       json.keys
           .where((key) => json[key] != null)
-          .where((key) => key != "id")
-          .where((key) => key != "sid")
-          .map((key) => NewOperationChange.edit(
+          .where((key) => key != 'id')
+          .where((key) => key != 'sid')
+          .map(
+            (key) => NewOperationChange.edit(
               collection: schema.name,
               sid: id,
               field: key,
               value: jsonEncode(json[key]),
-              workspace: workspace));
+              workspace: workspace,
+            ),
+          );
 
   NewOperationChange _getInsertEntry(T object) {
     final objId = getSid(object);
     final workspace = object.getWorkspace();
     try {
-      final json = toJson(object);
-      json.remove(schema.idName);
-      json.remove("sid");
-      json.remove("workspace");
+      final json = toJson(object)
+        ..remove(schema.idName)
+        ..remove('sid')
+        ..remove('workspace');
       return NewOperationChange.insert(
-          collection: schema.name,
-          sid: objId,
-          value: jsonEncode(json),
-          workspace: workspace);
+        collection: schema.name,
+        sid: objId,
+        value: jsonEncode(json),
+        workspace: workspace,
+      );
     } catch (e) {
-      throw Exception("object $object needs to implements toJson() to work");
+      throw Exception('object $object needs to implements toJson() to work');
     }
   }
 
@@ -106,17 +121,21 @@ extension IsarCollectionChanges<T extends CrdtBaseObject> on IsarCollection<T> {
 
   Future<int> deleteAllChanges(List<T> objs) async {
     final deletedEntries = objs
-        .map((obj) => NewOperationChange.delete(
-            collection: name, sid: getSid(obj), workspace: obj.getWorkspace()))
+        .map(
+          (obj) => NewOperationChange.delete(
+            collection: name,
+            sid: getSid(obj),
+            workspace: obj.getWorkspace(),
+          ),
+        )
         .toList();
 
     await _saveNewOperationChange(deletedEntries);
     return deleteAll(objs.map((e) => schema.getId(e)).toList());
   }
 
-  Future<int> putChanges(T object) async {
-    return (await putAllChanges([object])).first;
-  }
+  Future<int> putChanges(T object) async =>
+      (await putAllChanges([object])).first;
 
   Future<List<int>> putAllChanges(List<T> elements) async {
     if (isar.crdt == null) {
@@ -131,25 +150,29 @@ extension IsarCollectionChanges<T extends CrdtBaseObject> on IsarCollection<T> {
         elements.splitMatch((e) => schema.getId(e) == Isar.autoIncrement);
     final newElements = elementsMatch.matched;
     await putAll(newElements);
-    final insertEntries = newElements.map((e) => _getInsertEntry(e)).toList();
+    final insertEntries = newElements.map(_getInsertEntry).toList();
 
     final updateElements = elementsMatch.unmatched;
-    final elementsFound = await filter().anyOf(updateElements, (q, T id) {
-      return q.idEqualTo(schema.getId(id));
-    }).exportJson();
+    final elementsFound = await filter()
+        .anyOf(updateElements, (q, id) => q.idEqualTo(schema.getId(id)))
+        .exportJson();
 
     final updatedElementJsons =
         updateElements.map((e) => MapEntry(e, toJson(e)));
     final oldEditEntries = updatedElementJsons
         .map((toUpdate) {
-          schema.idName;
           final id = toUpdate.value[schema.sidName] as String;
-          final found = elementsFound.firstWhere((element) =>
-              element[schema.idName] == toUpdate.value[schema.idName]);
+          final found = elementsFound.firstWhere(
+            (element) =>
+                element[schema.idName] == toUpdate.value[schema.idName],
+          );
           final workspace = toUpdate.key.getWorkspace();
 
           return _getEditEntriesMap(
-              id, difference(found, toUpdate.value), workspace);
+            id,
+            difference(found, toUpdate.value),
+            workspace,
+          );
         })
         .expand((element) => element)
         .toList();
@@ -166,15 +189,17 @@ extension IsarCollectionChanges<T extends CrdtBaseObject> on IsarCollection<T> {
 }
 
 extension AllQueryFilter<T> on QueryBuilder<T, T, QFilterCondition> {
-  QueryBuilder<T, T, QAfterFilterCondition> idEqualTo(Id value) {
-    // ignore: invalid_use_of_protected_member
-    return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.equalTo(
-        property: r'id',
-        value: value,
-      ));
-    });
-  }
+  QueryBuilder<T, T, QAfterFilterCondition> idEqualTo(Id value) =>
+      // ignore: invalid_use_of_protected_member
+      QueryBuilder.apply(
+        this,
+        (query) => query.addFilterCondition(
+          FilterCondition.equalTo(
+            property: 'id',
+            value: value,
+          ),
+        ),
+      );
 }
 
 extension SplitMatch<T> on Iterable<T> {
