@@ -3,25 +3,24 @@
 import 'dart:async';
 
 import 'package:isar/isar.dart';
-import 'package:isar_crdt/operations/storable_change.dart';
-import 'store.dart';
-import '../isar_crdt.dart';
 
+import '../isar_crdt.dart';
+import '../operations/storable_change.dart';
 import '../utils/hlc.dart';
+import 'store.dart';
 
 class IsarMasterCrdtStore<T extends CrdtBaseModel> extends CrdtStore {
-  final IsarCollection<T> crdtCollection;
-  @override
-  final String nodeId;
-  final Future<T> Function() builder;
-  final String Function() sidGenerator;
-
   IsarMasterCrdtStore(
     this.crdtCollection, {
     required this.nodeId,
     required this.builder,
     required this.sidGenerator,
   });
+  final IsarCollection<T> crdtCollection;
+  @override
+  final String nodeId;
+  final Future<T> Function() builder;
+  final String Function() sidGenerator;
 
   @override
   Future<Hlc> canonicalTime() async {
@@ -80,16 +79,21 @@ class IsarMasterCrdtStore<T extends CrdtBaseModel> extends CrdtStore {
 
   @override
   Future<List<StorableChange>> storeChanges(
-      List<StorableChange> changes) async {
-    final found = await crdtCollection.filter().anyOf(changes, (q, element) {
-      return q
-          .operationEqualTo(element.change.operation)
-          .rowIdEqualTo(element.change.sid)
-          .fieldEqualTo(element.change.field)
-          .workspaceEqualTo(element.change.workspace)
-          .collectionEqualTo(element.change.collection)
-          .hlcEqualTo(element.hlc);
-    }).findAll();
+    List<StorableChange> changes,
+  ) async {
+    final found = await crdtCollection
+        .filter()
+        .anyOf(
+          changes,
+          (q, element) => q
+              .operationEqualTo(element.change.operation)
+              .rowIdEqualTo(element.change.sid)
+              .fieldEqualTo(element.change.field)
+              .workspaceEqualTo(element.change.workspace)
+              .collectionEqualTo(element.change.collection)
+              .hlcEqualTo(element.hlc),
+        )
+        .findAll();
 
     final storableChanges = changes.where((change) {
       if (found.isEmpty) return true;
@@ -110,25 +114,22 @@ class IsarMasterCrdtStore<T extends CrdtBaseModel> extends CrdtStore {
   }
 
   @override
-  String generateRandomSid() {
-    return sidGenerator();
-  }
+  String generateRandomSid() => sidGenerator();
 
   @override
   Future<List<StorableChange>> filterStoredChanges(
-      List<StorableChange> records) async {
-    final changes = records.map((e) => e.change).toList();
-
-    changes.where((element) => element.operation != CrdtOperations.delete);
-
+    List<StorableChange> records,
+  ) async {
     final query = crdtCollection
         .filter()
         .group((q) => q.operationEqualTo(CrdtOperations.delete))
         .or()
-        .group((q) => q
-            .operationEqualTo(CrdtOperations.insert)
-            .or()
-            .operationEqualTo(CrdtOperations.update));
+        .group(
+          (q) => q
+              .operationEqualTo(CrdtOperations.insert)
+              .or()
+              .operationEqualTo(CrdtOperations.update),
+        );
 
     final crdtChanges = await query.findAll();
 

@@ -1,41 +1,11 @@
-import 'dart:convert';
-
 import 'package:collection/collection.dart';
+import 'package:meta/meta.dart';
 
 import '../utils/hlc.dart';
 import 'operations.dart';
 
-bool isSameType<S, T>() => S == T;
-
-dynamic _encode(dynamic value) {
-  if (value == null) return null;
-  if (value is Map) return jsonEncode(value);
-
-  switch (value.runtimeType) {
-    case String:
-    case int:
-    case double:
-      return value;
-    case bool:
-      return value ? 1 : 0;
-    case DateTime:
-      return value.toUtc().toIso8601String();
-    case Hlc:
-      return value.toString();
-    default:
-      throw 'Unsupported type: ${value.runtimeType}';
-  }
-}
-
+@immutable
 class NewOperationChange {
-  // attributes
-  final String collection;
-  final String sid;
-  final String? field;
-  final String? value;
-  final CrdtOperations operation;
-  final String? workspace;
-
   const NewOperationChange({
     required this.collection,
     required this.sid,
@@ -44,7 +14,7 @@ class NewOperationChange {
     required this.operation,
     required this.workspace,
   });
-  NewOperationChange.insert({
+  const NewOperationChange.insert({
     required this.collection,
     required this.sid,
     required this.value,
@@ -52,7 +22,7 @@ class NewOperationChange {
   })  : operation = CrdtOperations.insert,
         field = null;
 
-  NewOperationChange.edit({
+  const NewOperationChange.edit({
     required this.collection,
     required this.sid,
     required this.field,
@@ -60,7 +30,7 @@ class NewOperationChange {
     required this.workspace,
   }) : operation = CrdtOperations.update;
 
-  NewOperationChange.delete({
+  const NewOperationChange.delete({
     required this.collection,
     required this.sid,
     required this.workspace,
@@ -68,14 +38,13 @@ class NewOperationChange {
         field = null,
         value = null;
 
-  NewOperationChange.fromJson(
-    Map<String, dynamic> map,
-  )   : collection = map['collection'] as String,
-        field = map['field'] as String,
-        sid = map['id'] as String,
-        workspace = map['workspace'] as String,
-        value = _encode(map['value']),
-        operation = CrdtOperations.values.byName(map['operation']);
+  // attributes
+  final String collection;
+  final String sid;
+  final String? field;
+  final String? value;
+  final CrdtOperations operation;
+  final String? workspace;
 
   @override
   bool operator ==(Object other) {
@@ -88,7 +57,7 @@ class NewOperationChange {
     return true;
   }
 
-  equalValue(Object? value) {
+  bool equalValue(Object? value) {
     // if (value.runtimeType != this.value.runtimeType) return false;
     if (value is String ||
         value is int ||
@@ -100,35 +69,28 @@ class NewOperationChange {
       return value == this.value;
     }
     if (value is List) {
-      return ListEquality().equals(value, this.value as List);
+      return const ListEquality().equals(value, this.value! as List);
     }
     if (value is Map) {
-      return MapEquality().equals(value, this.value as Map);
+      return const MapEquality().equals(value, this.value! as Map);
     }
     if (value is Set) {
-      return SetEquality().equals(value, this.value as Set);
+      return const SetEquality().equals(value, this.value! as Set);
     }
 
     return false;
   }
 
   @override
-  int get hashCode {
-    return Object.hashAll([collection, sid, field, value, operation]);
-  }
+  int get hashCode => Object.hashAll(
+        [collection, sid, field, value, operation],
+      );
 
-  Map<String, dynamic> toJson() {
-    return {
-      "collection": collection,
-      "sid": sid,
-      "field": field,
-      "value": value,
-      "operation": operation.name,
-    };
-  }
-
-  @override
-  String toString() {
-    return 'NewOperationChange(collection: $collection, sid: $sid, field: $field, value: $value, operation: $operation)';
-  }
+  Map<String, dynamic> toJson() => {
+        'collection': collection,
+        'sid': sid,
+        'field': field,
+        'value': value,
+        'operation': operation.name,
+      };
 }
