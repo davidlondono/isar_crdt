@@ -72,7 +72,7 @@ class IsarMasterCrdtStore<T extends CrdtBaseModel> extends CrdtStore {
       query = query.hlcContains(hlcNode);
     }
     if (hlcSince != null) {
-      query = query.hlcGreaterThan(hlcSince.toString());
+      query = query.hlcGreaterThan(hlcSince);
     }
     final values = query.watch(fireImmediately: true);
     return values.map((e) => e.map(_entryToChange).toList());
