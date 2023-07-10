@@ -108,16 +108,12 @@ void main() {
       await crdt.merge([
         MergableChange(
           change: NewOperationChange.delete(
-              collection: 'CarModel',
-              sid: 'car-sid-1',
-              workspace: workspace),
+              collection: 'CarModel', sid: 'car-sid-1', workspace: workspace),
           hlc: time,
         ),
         MergableChange(
           change: NewOperationChange.delete(
-              collection: 'CarModel',
-              sid: 'car-sid-2',
-              workspace: workspace),
+              collection: 'CarModel', sid: 'car-sid-2', workspace: workspace),
           hlc: time,
         ),
       ]);
@@ -127,9 +123,7 @@ void main() {
       await crdt.merge([
         MergableChange(
           change: NewOperationChange.delete(
-              collection: 'CarModel',
-              sid: 'car-sid-2',
-              workspace: workspace),
+              collection: 'CarModel', sid: 'car-sid-2', workspace: workspace),
           hlc: time,
         ),
         MergableChange(

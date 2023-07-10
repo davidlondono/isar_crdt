@@ -18,7 +18,7 @@ extension IsarLinksImplChanges<T extends CrdtBaseObject> on IsarLinksCommon<T> {
             sid: sid,
             workspace: obj.getWorkspace(),
             operation: CrdtOperations.addLink,
-            value: jsonEncode(targetCollection.getSid(obj)) ))
+            value: jsonEncode(targetCollection.getSid(obj))))
         .toList();
 
     final entriesRemove = removedObjects

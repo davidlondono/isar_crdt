@@ -99,8 +99,7 @@ class _SyncLinksTransaction extends _Transaction {
 
         for (final operation in operations) {
           final sid = jsonDecode(operation.sid) as String;
-          final obj = objects
-              .firstWhereOrNull((element) => element.sid == sid);
+          final obj = objects.firstWhereOrNull((element) => element.sid == sid);
           if (obj == null) {
             throw Exception("Object not found");
           }
@@ -246,7 +245,9 @@ class IsarMasterCrdtWriter extends CrdtWriter {
               "sid": e.key,
             };
 
-        final entries = e.value.sortedBy((element) => element.hlc).map((element) => MapEntry(element.change.field!, jsonDecode(element.change.value.toString())));
+        final entries = e.value.sortedBy((element) => element.hlc).map(
+            (element) => MapEntry(element.change.field!,
+                jsonDecode(element.change.value.toString())));
         final mapEntries = Map.fromEntries(entries);
         json.addAll(mapEntries);
         return json;

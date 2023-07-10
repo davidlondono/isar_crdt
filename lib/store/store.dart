@@ -16,9 +16,9 @@ abstract class CrdtStore {
     Hlc? hlcSince,
   });
 
+  Future<List<StorableChange>> filterStoredChanges(
+      List<StorableChange> records);
 
-  Future<List<StorableChange>> filterStoredChanges(List<StorableChange> records);
-  
   Future<List<StorableChange>> storeChanges(List<StorableChange> changes);
   String generateRandomSid();
 

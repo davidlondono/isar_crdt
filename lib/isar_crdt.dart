@@ -99,15 +99,16 @@ class IsarCrdt {
     var initialTime = await _canonicalTime();
     final uniqueTimes = changeset.map((e) => e.hlc).toSet().toList();
 
-    final canonicalTime = uniqueTimes.fold(initialTime, (canonicalTime, remote) {
-      
-        return canonicalTime.merge(remote);
+    final canonicalTime =
+        uniqueTimes.fold(initialTime, (canonicalTime, remote) {
+      return canonicalTime.merge(remote);
     });
     final storableChanges = changeset
         .map((map) => StorableChange(
             change: map.change, hlc: map.hlc, modified: canonicalTime))
         .toList();
-    final storedChanges = await writer!.writeTxn(() => store.storeChanges(storableChanges));
+    final storedChanges =
+        await writer!.writeTxn(() => store.storeChanges(storableChanges));
     await _updateTables(storedChanges);
     return canonicalTime;
   }

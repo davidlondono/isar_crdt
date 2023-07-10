@@ -79,18 +79,17 @@ class IsarMasterCrdtStore<T extends CrdtBaseModel> extends CrdtStore {
   }
 
   @override
-  Future<List<StorableChange>> storeChanges(List<StorableChange> changes) async {
-    final found = await crdtCollection.filter().anyOf(
-        changes,
-        (q, element) {
-          return q
-            .operationEqualTo(element.change.operation)
-            .rowIdEqualTo(element.change.sid)
-            .fieldEqualTo(element.change.field)
-            .workspaceEqualTo(element.change.workspace)
-            .collectionEqualTo(element.change.collection)
-            .hlcEqualTo(element.hlc);
-        }).findAll();
+  Future<List<StorableChange>> storeChanges(
+      List<StorableChange> changes) async {
+    final found = await crdtCollection.filter().anyOf(changes, (q, element) {
+      return q
+          .operationEqualTo(element.change.operation)
+          .rowIdEqualTo(element.change.sid)
+          .fieldEqualTo(element.change.field)
+          .workspaceEqualTo(element.change.workspace)
+          .collectionEqualTo(element.change.collection)
+          .hlcEqualTo(element.hlc);
+    }).findAll();
 
     final storableChanges = changes.where((change) {
       if (found.isEmpty) return true;

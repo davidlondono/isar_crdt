@@ -68,7 +68,6 @@ class Hlc implements Comparable<Hlc> {
     return Hlc(millisNew, counterNew, nodeId);
   }
 
-
   /// Compares and validates a timestamp from a remote system with the local
   /// timestamp to preserve monotonicity.
   /// Local wall time will be used if [wallMillis] isn't supplied.
@@ -91,7 +90,8 @@ class Hlc implements Comparable<Hlc> {
     return Hlc.fromLogicalTime(remote.logicalTime, nodeId);
   }
 
-  Hlc add(Duration duration) => Hlc(millis + duration.inMilliseconds, counter, nodeId);
+  Hlc add(Duration duration) =>
+      Hlc(millis + duration.inMilliseconds, counter, nodeId);
 
   String toJson() => toString();
 
