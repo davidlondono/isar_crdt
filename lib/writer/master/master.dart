@@ -30,7 +30,10 @@ class _DeleteTransaction extends _Transaction {
   final List<String> sids;
 
   @override
-  Future<void> run() => collection.deleteByIndex('sid', sids);
+  Future<void> run() => collection.deleteAllByIndex(
+        'sid',
+        sids.map((e) => [e]).toList(),
+      );
 }
 
 class _UpdateTransaction extends _Transaction {

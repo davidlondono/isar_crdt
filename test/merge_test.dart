@@ -99,6 +99,10 @@ void main() {
     });
 
     test('should store non repeated changes', () async {
+      const jsonCar = {
+        "make": "Toyota",
+        "year": "2020",
+      };
       const jsonCar2 = {
         "make": "Hunday",
         "year": "2022",
