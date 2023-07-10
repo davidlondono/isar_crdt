@@ -163,7 +163,6 @@ void main() {
         "make": "Hunday",
         "year": "2022",
       };
-
       await crdt.merge([
         MergableChange(
           change: NewOperationChange.insert(
