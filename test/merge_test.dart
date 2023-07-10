@@ -98,6 +98,72 @@ void main() {
       expect(cars[0].workspace, workspace);
     });
 
+    test('delete items', () async {
+      const jsonCar = {
+        "make": "Toyota",
+        "year": "2020",
+      };
+      const jsonCar2 = {
+        "make": "Hunday",
+        "year": "2022",
+      };
+      const jsonCar3 = {
+        "make": "Tesla",
+        "year": "2023",
+      };
+
+      await crdt.merge([
+        MergableChange(
+          change: NewOperationChange.insert(
+              collection: 'CarModel',
+              sid: 'car-sid-1',
+              value: jsonEncode(jsonCar),
+              workspace: workspace),
+          hlc: Hlc.now(remoteNodeId),
+        ),
+        MergableChange(
+          change: NewOperationChange.insert(
+              collection: 'CarModel',
+              sid: 'car-sid-2',
+              value: jsonEncode(jsonCar2),
+              workspace: workspace),
+          hlc: Hlc.now(remoteNodeId),
+        ),
+        MergableChange(
+          change: NewOperationChange.insert(
+              collection: 'CarModel',
+              sid: 'car-sid-3',
+              value: jsonEncode(jsonCar2),
+              workspace: workspace),
+          hlc: Hlc.now(remoteNodeId),
+        ),
+      ]);
+
+      final carsTemp = await isar.carModels.where().findAll();
+      expect(carsTemp.length, 3);
+
+      await crdt.merge([
+        MergableChange(
+          change: NewOperationChange.delete(
+              collection: 'CarModel', sid: 'car-sid-2', workspace: workspace),
+          hlc: Hlc.now(remoteNodeId),
+        ),
+        MergableChange(
+          change: NewOperationChange.delete(
+              collection: 'CarModel', sid: 'car-sid-3', workspace: workspace),
+          hlc: Hlc.now(remoteNodeId),
+        ),
+      ]);
+
+      final cars = await isar.carModels.where().findAll();
+      expect(cars.length, 1);
+
+      expect(cars[0].make, 'Toyota');
+      expect(cars[0].year, '2020');
+      expect(cars[0].sid, 'car-sid-1');
+      expect(cars[0].workspace, workspace);
+    });
+
     test('should store non repeated changes', () async {
       const jsonCar = {
         "make": "Toyota",
