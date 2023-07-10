@@ -92,14 +92,14 @@ class _SyncLinksTransaction extends _Transaction {
       if (links == null) {
         throw Exception("Links not found");
       }
-      final sids = operations.map((e) => e.sid).toList();
+      final sids = operations.map((e) => jsonDecode(e.sid) as String).toList();
       if (links is IsarLinksCommon<CrdtBaseObject>) {
         final objects =
             await links.targetCollection._queryBySids(sids).findAll();
 
         for (final operation in operations) {
-          final obj = objects
-              .firstWhereOrNull((element) => element.sid == operation.sid);
+          final sid = jsonDecode(operation.sid) as String;
+          final obj = objects.firstWhereOrNull((element) => element.sid == sid);
           if (obj == null) {
             throw Exception("Object not found");
           }
@@ -245,9 +245,11 @@ class IsarMasterCrdtWriter extends CrdtWriter {
               "sid": e.key,
             };
 
-        for (final element in e.value.sortedBy((element) => element.hlc)) {
-          json[element.change.field!] = element.change.value;
-        }
+        final entries = e.value.sortedBy((element) => element.hlc).map(
+            (element) => MapEntry(element.change.field!,
+                jsonDecode(element.change.value.toString())));
+        final mapEntries = Map.fromEntries(entries);
+        json.addAll(mapEntries);
         return json;
       }).toList();
 

@@ -15,7 +15,11 @@ abstract class CrdtStore {
     String? hlcNode,
     Hlc? hlcSince,
   });
-  Future<void> storeChanges(List<StorableChange> changes);
+
+  Future<List<StorableChange>> filterStoredChanges(
+      List<StorableChange> records);
+
+  Future<List<StorableChange>> storeChanges(List<StorableChange> changes);
   String generateRandomSid();
 
   String get nodeId;

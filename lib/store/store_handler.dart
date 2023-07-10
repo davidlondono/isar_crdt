@@ -1,7 +1,5 @@
 import 'package:isar_crdt/operations/storable_change.dart';
 
-import '../utils/hlc.dart';
-
 import '../operations/new_change.dart';
 import 'store.dart';
 
@@ -15,7 +13,7 @@ class IsarCrdtStoreHandler {
 
   Future<void> saveChanges(List<NewOperationChange> changes) async {
     final canonical = await store.canonicalTime();
-    final hlc = Hlc.send(canonical);
+    final hlc = canonical.increment();
 
     final newChanges = changes
         .map((change) =>

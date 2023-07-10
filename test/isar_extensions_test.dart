@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'dart:io';
 
 import 'package:isar_crdt/operations/storable_change.dart';
@@ -89,6 +90,7 @@ void main() {
     mockIsar.setCrdt(mockProcessor);
     isar.setCrdt(mockProcessor);
     when(store.canonicalTime()).thenAnswer((_) async => Hlc.now('nodeId'));
+    when(store.storeChanges(any)).thenAnswer((_) async => []);
     when(collection.name).thenReturn("MockIsarCollection");
     when(collection.schema).thenReturn(schema);
     when(collection.isar).thenReturn(mockIsar);
@@ -187,17 +189,17 @@ void main() {
         NewOperationChange.insert(
             collection: CarModelSchema.name,
             sid: "sid_1",
-            value: {"make": "make 1", "year": "year 1"},
+            value: jsonEncode({"make": "make 1", "year": "year 1"}),
             workspace: testWorkspace),
         NewOperationChange.insert(
             collection: CarModelSchema.name,
             sid: "sid_2",
-            value: {"make": "make 2", "year": "year 2"},
+            value: jsonEncode({"make": "make 2", "year": "year 2"}),
             workspace: testWorkspace),
         NewOperationChange.insert(
             collection: CarModelSchema.name,
             sid: "sid_3",
-            value: {"make": "make 3", "year": "year 3"},
+            value: jsonEncode({"make": "make 3", "year": "year 3"}),
             workspace: testWorkspace)
       ];
       expect(
@@ -233,13 +235,13 @@ void main() {
             collection: CarModelSchema.name,
             sid: "sid_1",
             field: "make",
-            value: "make 1 edited",
+            value: "\"make 1 edited\"",
             workspace: testWorkspace),
         NewOperationChange.edit(
             collection: CarModelSchema.name,
             sid: "sid_1",
             field: "year",
-            value: "year 1 edited",
+            value: "\"year 1 edited\"",
             workspace: testWorkspace),
       ];
       expect(

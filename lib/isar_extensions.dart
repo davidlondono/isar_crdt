@@ -18,7 +18,7 @@ extension IsarLinksImplChanges<T extends CrdtBaseObject> on IsarLinksCommon<T> {
             sid: sid,
             workspace: obj.getWorkspace(),
             operation: CrdtOperations.addLink,
-            value: targetCollection.getSid(obj)))
+            value: jsonEncode(targetCollection.getSid(obj))))
         .toList();
 
     final entriesRemove = removedObjects
@@ -28,7 +28,7 @@ extension IsarLinksImplChanges<T extends CrdtBaseObject> on IsarLinksCommon<T> {
             sid: sid,
             workspace: obj.getWorkspace(),
             operation: CrdtOperations.removeLink,
-            value: targetCollection.getSid(obj)))
+            value: jsonEncode(targetCollection.getSid(obj))))
         .toList();
 
     await targetCollection
@@ -78,7 +78,7 @@ extension IsarCollectionChanges<T extends CrdtBaseObject> on IsarCollection<T> {
               collection: schema.name,
               sid: id,
               field: key,
-              value: json[key],
+              value: jsonEncode(json[key]),
               workspace: workspace));
 
   NewOperationChange _getInsertEntry(T object) {
@@ -92,7 +92,7 @@ extension IsarCollectionChanges<T extends CrdtBaseObject> on IsarCollection<T> {
       return NewOperationChange.insert(
           collection: schema.name,
           sid: objId,
-          value: json,
+          value: jsonEncode(json),
           workspace: workspace);
     } catch (e) {
       throw Exception("object $object needs to implements toJson() to work");
