@@ -32,7 +32,7 @@ dependencies:
 
 1. extend your models with CrdtBaseObject
 - add toJson function and add all the fields you want to sync (include id and sid)
-2. Create a model to store the crdt changes and extends with ChangesyncBaseModel
+2. Create a model to store the crdt changes and extends with CrdtBaseObject
 - no need to add anything
 ```dart
 // models
@@ -54,25 +54,37 @@ class CarModel extends CrdtBaseObject {
 }
 
 @collection
-class CrdtEntry extends ChangesyncBaseModel {}
+class CrdtEntry extends CrdtBaseObject {}
 ```
 3. add the models including the crdt model to the isar instance
 4. create a changesync instance and add it to the isar instance
 ```dart
+   final dir = await getApplicationDocumentsDirectory();
   final isar = await Isar.open(
       [CarModelSchema, CrdtEntrySchema],
+      dir: dir.path,
     );
 
 
   final changesSync = IsarCrdt(
     store: IsarMasterCrdtStore(
       isar.crdtEntrys,
+      nodeId: "", // change to your own nodeId
       builder: () => CrdtEntry(),
       sidGenerator: () => uuid.v4(),
     ),
   );
   isar.setCrdt(changesSync);
 ```
+
+5. don't forget to import the packages as they are required as the example shown here above
+```dart
+import 'package:uuid/uuid.dart';
+import 'package:isar/isar.dart';
+import 'package:isar_crdt/isar_crdt.dart';
+import 'package:path_provider/path_provider.dart';
+```
+
 
 ## Additional information
 
