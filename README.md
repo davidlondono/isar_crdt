@@ -78,13 +78,12 @@ class CrdtEntry extends CrdtBaseObject {}
 ```
 
 5. don't forget to import the packages as they are required as the example shown here above
-   ```dart
+```dart
 import 'package:uuid/uuid.dart';
 import 'package:isar/isar.dart';
 import 'package:isar_crdt/isar_crdt.dart';
 import 'package:path_provider/path_provider.dart';
 ```
-
 
 
 ## Additional information
