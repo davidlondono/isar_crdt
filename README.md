@@ -59,8 +59,10 @@ class CrdtEntry extends CrdtBaseObject {}
 3. add the models including the crdt model to the isar instance
 4. create a changesync instance and add it to the isar instance
 ```dart
+   final dir = await getApplicationDocumentsDirectory();
   final isar = await Isar.open(
       [CarModelSchema, CrdtEntrySchema],
+      dir: dir.path,
     );
 
 
@@ -74,6 +76,16 @@ class CrdtEntry extends CrdtBaseObject {}
   );
   isar.setCrdt(changesSync);
 ```
+
+5. don't forget to import the packages as they are required as the example shown here above
+   ```dart
+import 'package:uuid/uuid.dart';
+import 'package:isar/isar.dart';
+import 'package:isar_crdt/isar_crdt.dart';
+import 'package:path_provider/path_provider.dart';
+```
+
+
 
 ## Additional information
 
